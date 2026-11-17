@@ -33,6 +33,12 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         """Remove ``id``. A missing id is not an error."""
         self.storage.delete(client, self.key, str(id))
 
+    def mdelete(self, client: ClientType, ids: Sequence[IdType]) -> None:
+        """Remove every id. Missing ids are not an error."""
+        if not ids:
+            return
+        self.storage.mdelete(client, self.key, [str(id) for id in ids])
+
     def exists(self, client: ClientType, id: IdType) -> bool:
         """Return whether ``id`` is present."""
         return self.storage.exists(client, self.key, str(id))
@@ -42,7 +48,9 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         if not ids:
             return []
         raw_values = self.storage.mget(client, self.key, [str(id) for id in ids])
-        return [None if raw is None else self.serializer.deserialize(raw) for raw in raw_values]
+        present = [raw for raw in raw_values if raw is not None]
+        decoded = iter(self.serializer.mdeserialize(present))
+        return [None if raw is None else next(decoded) for raw in raw_values]
 
     def mset(
         self, client: ClientType, items: Mapping[IdType, ModelType], *, ttl: int | None = None
@@ -50,5 +58,7 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         """Store every item. ``ttl`` applies to each id."""
         if not items:
             return
-        mapping = {str(id): self.serializer.serialize(value) for id, value in items.items()}
+        fields = [str(id) for id in items]
+        values = self.serializer.mserialize(list(items.values()))
+        mapping = dict(zip(fields, values, strict=True))
         self.storage.mset(client, self.key, mapping, ttl=ttl)

@@ -41,7 +41,7 @@ async def main() -> None:
     await users.delete(client, ada.id)
 ```
 
-`ttl` is a whole number of seconds on `set` and `mset`. Omit it, or pass `None`, and the write does not expire. `mset` applies that one TTL to every id. `delete` removes one id. A missing id is not an error.
+`ttl` is a whole number of seconds on `set` and `mset`. Omit it, or pass `None`, and the write does not expire. `mset` applies that one TTL to every id. `delete` removes one id. `mdelete` removes every given id. A missing id is not an error.
 
 Inside `main`, the same client works for a set index.
 

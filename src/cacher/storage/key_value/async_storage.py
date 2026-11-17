@@ -34,6 +34,10 @@ class AsyncKeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protoco
         """Remove ``field``. A missing field is not an error."""
         ...
 
+    async def mdelete(self, client: ClientType, name: str, fields: Sequence[FieldType]) -> None:
+        """Remove every field. Missing fields are not an error."""
+        ...
+
     async def exists(self, client: ClientType, name: str, field: FieldType) -> bool:
         """Return whether ``field`` is present."""
         ...

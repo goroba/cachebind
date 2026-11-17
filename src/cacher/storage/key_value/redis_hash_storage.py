@@ -22,6 +22,11 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
     def delete(self, client: Redis, name: str, field: str) -> None:
         client.hdel(name, field)
 
+    def mdelete(self, client: Redis, name: str, fields: Sequence[str]) -> None:
+        if not fields:
+            return
+        client.hdel(name, *fields)
+
     def exists(self, client: Redis, name: str, field: str) -> bool:
         return bool(client.hexists(name, field))
 

@@ -24,9 +24,7 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         """Add every member."""
         if not members:
             return
-        self.storage.madd(
-            client, self.key, [self.serializer.serialize(member) for member in members]
-        )
+        self.storage.madd(client, self.key, self.serializer.mserialize(members))
 
     def remove(self, client: ClientType, member: MemberType) -> None:
         """Remove ``member``. A missing member is not an error."""
@@ -36,9 +34,7 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         """Remove every member. Missing members are not an error."""
         if not members:
             return
-        self.storage.mremove(
-            client, self.key, [self.serializer.serialize(member) for member in members]
-        )
+        self.storage.mremove(client, self.key, self.serializer.mserialize(members))
 
     def contains(self, client: ClientType, member: MemberType) -> bool:
         """Return whether ``member`` is in the set."""

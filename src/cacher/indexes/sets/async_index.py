@@ -24,8 +24,7 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
         """Add every member."""
         if not members:
             return
-        serialized = [self.serializer.serialize(member) for member in members]
-        await self.storage.madd(client, self.key, serialized)
+        await self.storage.madd(client, self.key, self.serializer.mserialize(members))
 
     async def remove(self, client: ClientType, member: MemberType) -> None:
         """Remove ``member``. A missing member is not an error."""
@@ -35,8 +34,7 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
         """Remove every member. Missing members are not an error."""
         if not members:
             return
-        serialized = [self.serializer.serialize(member) for member in members]
-        await self.storage.mremove(client, self.key, serialized)
+        await self.storage.mremove(client, self.key, self.serializer.mserialize(members))
 
     async def contains(self, client: ClientType, member: MemberType) -> bool:
         """Return whether ``member`` is in the set."""

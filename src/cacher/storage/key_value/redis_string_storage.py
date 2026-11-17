@@ -28,6 +28,11 @@ class RedisStringStorage(KeyValueStorage[Redis, str, str]):
     def delete(self, client: Redis, name: str, field: str) -> None:
         client.delete(_redis_key(name, field))
 
+    def mdelete(self, client: Redis, name: str, fields: Sequence[str]) -> None:
+        if not fields:
+            return
+        client.delete(*(_redis_key(name, field) for field in fields))
+
     def exists(self, client: Redis, name: str, field: str) -> bool:
         return bool(client.exists(_redis_key(name, field)))
 

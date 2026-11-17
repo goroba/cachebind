@@ -22,6 +22,11 @@ class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
     async def delete(self, client: AsyncRedis, name: str, field: str) -> None:
         await client.hdel(name, field)
 
+    async def mdelete(self, client: AsyncRedis, name: str, fields: Sequence[str]) -> None:
+        if not fields:
+            return
+        await client.hdel(name, *fields)
+
     async def exists(self, client: AsyncRedis, name: str, field: str) -> bool:
         return bool(await client.hexists(name, field))
 

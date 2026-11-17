@@ -28,6 +28,11 @@ class AsyncRedisStringStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
     async def delete(self, client: AsyncRedis, name: str, field: str) -> None:
         await client.delete(_redis_key(name, field))
 
+    async def mdelete(self, client: AsyncRedis, name: str, fields: Sequence[str]) -> None:
+        if not fields:
+            return
+        await client.delete(*(_redis_key(name, field) for field in fields))
+
     async def exists(self, client: AsyncRedis, name: str, field: str) -> bool:
         return bool(await client.exists(_redis_key(name, field)))
 

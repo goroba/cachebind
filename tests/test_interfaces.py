@@ -162,6 +162,9 @@ class MemoryHash:
     def delete(self, client: object, name: str, field: str) -> None:
         return None
 
+    def mdelete(self, client: object, name: str, fields: Sequence[str]) -> None:
+        return None
+
     def exists(self, client: object, name: str, field: str) -> bool:
         return False
 
@@ -184,6 +187,9 @@ class AsyncMemoryHash:
         return None
 
     async def delete(self, client: object, name: str, field: str) -> None:
+        return None
+
+    async def mdelete(self, client: object, name: str, fields: Sequence[str]) -> None:
         return None
 
     async def exists(self, client: object, name: str, field: str) -> bool:

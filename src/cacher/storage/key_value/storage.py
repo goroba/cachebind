@@ -34,6 +34,10 @@ class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protocol):
         """Remove ``field``. A missing field is not an error."""
         ...
 
+    def mdelete(self, client: ClientType, name: str, fields: Sequence[FieldType]) -> None:
+        """Remove every field. Missing fields are not an error."""
+        ...
+
     def exists(self, client: ClientType, name: str, field: FieldType) -> bool:
         """Return whether ``field`` is present."""
         ...

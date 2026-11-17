@@ -21,6 +21,16 @@ def test_int_round_trip() -> None:
     assert serializer.serialize(15) == "15"
 
 
+def test_mserialize_round_trip() -> None:
+    serializer = IntSerializer()
+    assert serializer.mserialize([]) == []
+    assert serializer.mdeserialize([]) == []
+    values = [0, -42, 15]
+    raw = serializer.mserialize(values)
+    assert raw == ["0", "-42", "15"]
+    assert serializer.mdeserialize(raw) == values
+
+
 def test_int_rejects_bool() -> None:
     serializer = IntSerializer()
     with pytest.raises(ValueError):

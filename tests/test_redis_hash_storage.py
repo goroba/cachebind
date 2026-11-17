@@ -13,6 +13,7 @@ class _HashSpy:
     def __init__(self) -> None:
         self.hmget_called = False
         self.hset_called = False
+        self.hdel_called = False
 
     def hmget(self, name: str, keys: Sequence[str]) -> list[str | None]:
         self.hmget_called = True
@@ -26,6 +27,10 @@ class _HashSpy:
         mapping: dict[str, str] | None = None,
     ) -> int:
         self.hset_called = True
+        return 0
+
+    def hdel(self, name: str, *keys: str) -> int:
+        self.hdel_called = True
         return 0
 
 
@@ -57,6 +62,11 @@ def test_sync_hash_storage_round_trip() -> None:
     assert storage.get(client, "users", "1") is None
     assert storage.exists(client, "users", "1") is False
 
+    storage.mdelete(client, "users", ["2", "missing"])
+    assert storage.get(client, "users", "2") is None
+    assert storage.exists(client, "users", "2") is False
+    assert storage.get(client, "users", "4") == "40"
+
 
 def test_sync_hash_storage_empty_batches_do_not_call_redis() -> None:
     spy = _HashSpy()
@@ -64,8 +74,10 @@ def test_sync_hash_storage_empty_batches_do_not_call_redis() -> None:
 
     assert storage.mget(spy, "users", []) == []  # type: ignore[arg-type]
     storage.mset(spy, "users", {})  # type: ignore[arg-type]
+    storage.mdelete(spy, "users", [])  # type: ignore[arg-type]
     assert spy.hmget_called is False
     assert spy.hset_called is False
+    assert spy.hdel_called is False
 
 
 def test_sync_hash_storage_decodes_bytes() -> None:
@@ -111,6 +123,11 @@ def test_async_hash_storage_round_trip() -> None:
             await storage.delete(client, "users", "1")
             assert await storage.get(client, "users", "1") is None
             assert await storage.exists(client, "users", "1") is False
+
+            await storage.mdelete(client, "users", ["2", "missing"])
+            assert await storage.get(client, "users", "2") is None
+            assert await storage.exists(client, "users", "2") is False
+            assert await storage.get(client, "users", "4") == "40"
         finally:
             await client.aclose()
 
@@ -124,10 +141,12 @@ def test_async_hash_storage_empty_batches_do_not_call_redis() -> None:
     async def scenario() -> None:
         assert await storage.mget(spy, "users", []) == []  # type: ignore[arg-type]
         await storage.mset(spy, "users", {})  # type: ignore[arg-type]
+        await storage.mdelete(spy, "users", [])  # type: ignore[arg-type]
 
     asyncio.run(scenario())
     assert spy.hmget_called is False
     assert spy.hset_called is False
+    assert spy.hdel_called is False
 
 
 def test_async_hash_storage_decodes_bytes() -> None:

@@ -24,11 +24,9 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         """Add every member with its score. A repeated member keeps the last score."""
         if not members:
             return
-        self.storage.madd(
-            client,
-            self.key,
-            [(self.serializer.serialize(member), score) for member, score in members],
-        )
+        serialized = self.serializer.mserialize([member for member, _score in members])
+        scores = (score for _member, score in members)
+        self.storage.madd(client, self.key, list(zip(serialized, scores, strict=True)))
 
     def remove(self, client: ClientType, member: MemberType) -> None:
         """Remove ``member``. A missing member is not an error."""
@@ -38,9 +36,7 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         """Remove every member. Missing members are not an error."""
         if not members:
             return
-        self.storage.mremove(
-            client, self.key, [self.serializer.serialize(member) for member in members]
-        )
+        self.storage.mremove(client, self.key, self.serializer.mserialize(members))
 
     def contains(self, client: ClientType, member: MemberType) -> bool:
         """Return whether ``member`` is in the ordered set."""
@@ -59,7 +55,7 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         if _empty_range(start, stop):
             return []
         raw = self.storage.range(client, self.key, start, stop)
-        return [self.serializer.deserialize(member) for member in raw]
+        return self.serializer.mdeserialize(raw)
 
     def range_with_scores(
         self, client: ClientType, start: int, stop: int
@@ -68,7 +64,8 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         if _empty_range(start, stop):
             return []
         raw = self.storage.range_with_scores(client, self.key, start, stop)
-        return [(self.serializer.deserialize(member), score) for member, score in raw]
+        members = self.serializer.mdeserialize([member for member, _score in raw])
+        return list(zip(members, (score for _member, score in raw), strict=True))
 
     def rev_rank(self, client: ClientType, member: MemberType) -> int | None:
         """Return the 0-based descending rank of ``member``, or ``None`` when it is missing."""
@@ -79,7 +76,7 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         if _empty_range(start, stop):
             return []
         raw = self.storage.rev_range(client, self.key, start, stop)
-        return [self.serializer.deserialize(member) for member in raw]
+        return self.serializer.mdeserialize(raw)
 
     def rev_range_with_scores(
         self, client: ClientType, start: int, stop: int
@@ -88,4 +85,5 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         if _empty_range(start, stop):
             return []
         raw = self.storage.rev_range_with_scores(client, self.key, start, stop)
-        return [(self.serializer.deserialize(member), score) for member, score in raw]
+        members = self.serializer.mdeserialize([member for member, _score in raw])
+        return list(zip(members, (score for _member, score in raw), strict=True))

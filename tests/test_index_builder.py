@@ -84,6 +84,10 @@ class MemoryStorage(KeyValueStorage[Memory, str, str]):
     def delete(self, client: Memory, name: str, field: str) -> None:
         self.data.pop((name, field), None)
 
+    def mdelete(self, client: Memory, name: str, fields: Sequence[str]) -> None:
+        for field in fields:
+            self.data.pop((name, field), None)
+
     def exists(self, client: Memory, name: str, field: str) -> bool:
         return (name, field) in self.data
 

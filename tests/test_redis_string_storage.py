@@ -21,6 +21,9 @@ class _MgetSpy:
     def mset(self, items: dict[str, str]) -> None:
         self.called = True
 
+    def delete(self, *keys: str) -> None:
+        self.called = True
+
 
 def test_sync_storage_round_trip() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
@@ -52,6 +55,11 @@ def test_sync_storage_round_trip() -> None:
     assert storage.get(client, _NAME, "a") is None
     assert storage.exists(client, _NAME, "a") is False
 
+    storage.mdelete(client, _NAME, ["b", "missing"])
+    assert storage.get(client, _NAME, "b") is None
+    assert storage.exists(client, _NAME, "b") is False
+    assert storage.get(client, _NAME, "c") == "30"
+
 
 def test_sync_storage_empty_batches_do_not_call_redis() -> None:
     spy = _MgetSpy()
@@ -59,6 +67,7 @@ def test_sync_storage_empty_batches_do_not_call_redis() -> None:
 
     assert storage.mget(spy, _NAME, []) == []  # type: ignore[arg-type]
     storage.mset(spy, _NAME, {})  # type: ignore[arg-type]
+    storage.mdelete(spy, _NAME, [])  # type: ignore[arg-type]
     assert spy.called is False
 
 
@@ -107,6 +116,11 @@ def test_async_storage_round_trip() -> None:
             await storage.delete(client, _NAME, "a")
             assert await storage.get(client, _NAME, "a") is None
             assert await storage.exists(client, _NAME, "a") is False
+
+            await storage.mdelete(client, _NAME, ["b", "missing"])
+            assert await storage.get(client, _NAME, "b") is None
+            assert await storage.exists(client, _NAME, "b") is False
+            assert await storage.get(client, _NAME, "c") == "30"
         finally:
             await client.aclose()
 
@@ -120,6 +134,7 @@ def test_async_storage_empty_batches_do_not_call_redis() -> None:
     async def scenario() -> None:
         assert await storage.mget(spy, _NAME, []) == []  # type: ignore[arg-type]
         await storage.mset(spy, _NAME, {})  # type: ignore[arg-type]
+        await storage.mdelete(spy, _NAME, [])  # type: ignore[arg-type]
 
     asyncio.run(scenario())
     assert spy.called is False

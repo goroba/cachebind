@@ -65,11 +65,13 @@ The snippets in this tutorial are one program, in this order.
 
 `UserSerializer` declares `Serializer[User, str]`. The builder checks that declaration. `member_type` must be `User`, and the Redis storage member type is `str`.
 
-The index keeps one serializer for the process. Each call opens its own session and closes it before returning. `expunge` detaches the loaded `User` so its attributes stay available after the session closes.
-
-`serialize` loads the row by id and returns `str(row.id)`. A missing row raises `ValueError`, and Redis is left unchanged. `deserialize` loads the row for the stored UUID and returns that `User`. A missing row raises `ValueError`.
+The index keeps one serializer for the process. `serialize` returns `str(value.id)`. `mserialize` returns those id strings in input order. `deserialize` opens a session, loads the row for the stored UUID, and returns that `User`. A missing row raises `ValueError`. `mdeserialize` loads every stored id with one query. The query does not keep input order, so that method puts each `User` back in that order. `expunge` detaches each loaded `User` so its attributes stay available after the session closes.
 
 ```python
+from collections.abc import Sequence
+
+from sqlalchemy import select
+
 from cacher import Serializer
 
 
@@ -78,11 +80,7 @@ class UserSerializer(Serializer[User, str]):
         self.sessions = sessions
 
     def serialize(self, value: User) -> str:
-        with self.sessions() as session:
-            row = session.get(User, value.id)
-            if row is None:
-                raise ValueError(f"no user {value.id}")
-            return str(row.id)
+        return str(value.id)
 
     def deserialize(self, value: str) -> User:
         user_id = uuid.UUID(value)
@@ -92,6 +90,24 @@ class UserSerializer(Serializer[User, str]):
                 raise ValueError(f"no user {user_id}")
             session.expunge(row)
             return row
+
+    def mserialize(self, values: Sequence[User]) -> list[str]:
+        return [str(value.id) for value in values]
+
+    def mdeserialize(self, values: Sequence[str]) -> list[User]:
+        ids = [uuid.UUID(value) for value in values]
+        with self.sessions() as session:
+            rows = session.scalars(select(User).where(User.id.in_(ids))).all()
+            by_id = {row.id: row for row in rows}
+            for row in rows:
+                session.expunge(row)
+        loaded: list[User] = []
+        for user_id in ids:
+            row = by_id.get(user_id)
+            if row is None:
+                raise ValueError(f"no user {user_id}")
+            loaded.append(row)
+        return loaded
 ```
 
 ## Index
@@ -129,7 +145,7 @@ leaderboard.add(client, lin, 2500.0)
 
 From the lowest score to the highest, the board is Maya, Ada, Omar, Grace, Lin. `rank` counts that way, starting at `0`.
 
-`rev_range_with_scores` counts from the highest score. Both ends are inclusive. The first three most rated users are indexes `0` through `2`. Those three calls to `deserialize` load Lin, Grace, and Omar from Postgres.
+`rev_range_with_scores` counts from the highest score. Both ends are inclusive. The first three most rated users are indexes `0` through `2`. That call uses `mdeserialize`, so one query loads Lin, Grace, and Omar from Postgres.
 
 ```python
 top = leaderboard.rev_range_with_scores(client, 0, 2)
