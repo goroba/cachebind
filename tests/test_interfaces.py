@@ -6,10 +6,12 @@ import pytest
 from cacher import (
     AsyncKeyValueIndex,
     AsyncKeyValueStorage,
+    AsyncOrderedSetStorage,
     AsyncSetStorage,
     IntSerializer,
     KeyValueIndex,
     KeyValueStorage,
+    OrderedSetStorage,
     SetStorage,
     get_registry,
 )
@@ -230,11 +232,99 @@ class AsyncMemorySet:
         return False
 
 
+class MemoryOrderedSet:
+    def add(self, client: object, name: str, member: str, score: float) -> None:
+        return None
+
+    def madd(self, client: object, name: str, members: Sequence[tuple[str, float]]) -> None:
+        return None
+
+    def remove(self, client: object, name: str, member: str) -> None:
+        return None
+
+    def mremove(self, client: object, name: str, members: Sequence[str]) -> None:
+        return None
+
+    def contains(self, client: object, name: str, member: str) -> bool:
+        return False
+
+    def score(self, client: object, name: str, member: str) -> float | None:
+        return None
+
+    def rank(self, client: object, name: str, member: str) -> int | None:
+        return None
+
+    def range(self, client: object, name: str, start: int, stop: int) -> list[str]:
+        return []
+
+    def range_with_scores(
+        self, client: object, name: str, start: int, stop: int
+    ) -> list[tuple[str, float]]:
+        return []
+
+    def rev_rank(self, client: object, name: str, member: str) -> int | None:
+        return None
+
+    def rev_range(self, client: object, name: str, start: int, stop: int) -> list[str]:
+        return []
+
+    def rev_range_with_scores(
+        self, client: object, name: str, start: int, stop: int
+    ) -> list[tuple[str, float]]:
+        return []
+
+
+class AsyncMemoryOrderedSet:
+    async def add(self, client: object, name: str, member: str, score: float) -> None:
+        return None
+
+    async def madd(
+        self, client: object, name: str, members: Sequence[tuple[str, float]]
+    ) -> None:
+        return None
+
+    async def remove(self, client: object, name: str, member: str) -> None:
+        return None
+
+    async def mremove(self, client: object, name: str, members: Sequence[str]) -> None:
+        return None
+
+    async def contains(self, client: object, name: str, member: str) -> bool:
+        return False
+
+    async def score(self, client: object, name: str, member: str) -> float | None:
+        return None
+
+    async def rank(self, client: object, name: str, member: str) -> int | None:
+        return None
+
+    async def range(self, client: object, name: str, start: int, stop: int) -> list[str]:
+        return []
+
+    async def range_with_scores(
+        self, client: object, name: str, start: int, stop: int
+    ) -> list[tuple[str, float]]:
+        return []
+
+    async def rev_rank(self, client: object, name: str, member: str) -> int | None:
+        return None
+
+    async def rev_range(self, client: object, name: str, start: int, stop: int) -> list[str]:
+        return []
+
+    async def rev_range_with_scores(
+        self, client: object, name: str, start: int, stop: int
+    ) -> list[tuple[str, float]]:
+        return []
+
+
 def test_storage_protocols() -> None:
     assert isinstance(MemoryHash(), KeyValueStorage)
     assert isinstance(AsyncMemoryHash(), AsyncKeyValueStorage)
     assert isinstance(MemorySet(), SetStorage)
     assert isinstance(AsyncMemorySet(), AsyncSetStorage)
+    assert isinstance(MemoryOrderedSet(), OrderedSetStorage)
+    assert isinstance(AsyncMemoryOrderedSet(), AsyncOrderedSetStorage)
 
 
 def test_public_api_omits_redis_storages() -> None:
@@ -244,9 +334,11 @@ def test_public_api_omits_redis_storages() -> None:
         "RedisStringStorage",
         "RedisHashStorage",
         "RedisSetStorage",
+        "RedisOrderedSetStorage",
         "AsyncRedisStringStorage",
         "AsyncRedisHashStorage",
         "AsyncRedisSetStorage",
+        "AsyncRedisOrderedSetStorage",
     ):
         assert name not in cacher.__all__
         assert not hasattr(cacher, name)

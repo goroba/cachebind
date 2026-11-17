@@ -6,16 +6,21 @@ Protocols do not require Redis. Importing a Redis storage class requires the ``r
 import importlib
 
 from cacher.storage.key_value import AsyncKeyValueStorage, KeyValueStorage
+from cacher.storage.ordered_sets import AsyncOrderedSetStorage, OrderedSetStorage
 from cacher.storage.sets import AsyncSetStorage, SetStorage
 
 __all__ = [
     "AsyncKeyValueStorage",
+    "AsyncOrderedSetStorage",
     "AsyncRedisHashStorage",
+    "AsyncRedisOrderedSetStorage",
     "AsyncRedisSetStorage",
     "AsyncRedisStringStorage",
     "AsyncSetStorage",
     "KeyValueStorage",
+    "OrderedSetStorage",
     "RedisHashStorage",
+    "RedisOrderedSetStorage",
     "RedisSetStorage",
     "RedisStringStorage",
     "SetStorage",
@@ -31,6 +36,10 @@ _SETS = {
     "AsyncRedisSetStorage",
     "RedisSetStorage",
 }
+_ORDERED_SETS = {
+    "AsyncRedisOrderedSetStorage",
+    "RedisOrderedSetStorage",
+}
 
 
 def __getattr__(name: str) -> type:
@@ -39,5 +48,8 @@ def __getattr__(name: str) -> type:
         return getattr(module, name)
     if name in _SETS:
         module = importlib.import_module("cacher.storage.sets")
+        return getattr(module, name)
+    if name in _ORDERED_SETS:
+        module = importlib.import_module("cacher.storage.ordered_sets")
         return getattr(module, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -8,6 +8,13 @@ from cacher.indexes.key_value import (
     build_async_key_value_index,
     build_key_value_index,
 )
+from cacher.indexes.ordered_sets import (
+    AsyncOrderedSetIndex,
+    OrderedSetBase,
+    OrderedSetIndex,
+    build_async_ordered_set_index,
+    build_ordered_set_index,
+)
 from cacher.indexes.registry import IndexRegistry
 from cacher.indexes.sets import (
     AsyncSetIndex,
@@ -19,16 +26,21 @@ from cacher.indexes.sets import (
 
 __all__ = [
     "AsyncKeyValueIndex",
+    "AsyncOrderedSetIndex",
     "AsyncSetIndex",
     "Index",
     "IndexRegistry",
     "KeyValueBase",
     "KeyValueIndex",
+    "OrderedSetBase",
+    "OrderedSetIndex",
     "SetBase",
     "SetIndex",
     "build_async_key_value_index",
+    "build_async_ordered_set_index",
     "build_async_set_index",
     "build_key_value_index",
+    "build_ordered_set_index",
     "build_set_index",
     "get_registry",
 ]

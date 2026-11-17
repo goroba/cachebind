@@ -4,11 +4,11 @@ A Python library.
 
 **What is it for?** Cacher is a way to name a cache binding and use it from application code. An index holds one storage key, a serializer, and a storage. You build it once. Each call takes your storage client and reads or writes a Python value through that binding. Redis storages are included. Any storage that matches the protocol works the same way.
 
-**What can an index store?** A key-value index stores one model per id. A set index stores members in one set. Each has a sync builder and an async builder.
+**What can an index store?** A key-value index stores one model per id. A set index stores members in one set. An ordered set index stores members with scores, lowest score first. Each has a sync builder and an async builder.
 
 ## Indexes
 
-Build an index once with `build_async_key_value_index` or `build_async_set_index`. Pass a key, the value type, a serializer instance, and a storage instance. Then pass a storage client into every call.
+Build an index once with `build_async_key_value_index`, `build_async_set_index`, or `build_async_ordered_set_index`. Pass a key, the value type, a serializer instance, and a storage instance. Then pass a storage client into every call.
 
 ```python
 from uuid import UUID
@@ -63,7 +63,26 @@ active = build_async_set_index(
 
 `remove` drops one member. A missing member is not an error. Sets have no TTL.
 
-Sync indexes use `build_key_value_index` and `build_set_index` with the matching sync storage. Those calls are not awaited.
+An ordered set uses the same client. Each member has one score. Adding a member that is already present updates its score. `rank` is 0-based, from the lowest score. `range` includes both ends. Ordered sets have no TTL.
+
+```python
+from cacher import IntSerializer, build_async_ordered_set_index
+from cacher.storage import AsyncRedisOrderedSetStorage
+
+ranking = build_async_ordered_set_index(
+    "user_scores",
+    member_type=int,
+    serializer=IntSerializer(),
+    storage=AsyncRedisOrderedSetStorage(),
+)
+
+    await ranking.add(client, 1, 10.0)
+    place = await ranking.rank(client, 1)
+    top = await ranking.range(client, 0, 0)
+    await ranking.remove(client, 1)
+```
+
+Sync indexes use `build_key_value_index`, `build_set_index`, and `build_ordered_set_index` with the matching sync storage. Those calls are not awaited.
 
 `get_registry` from `cacher` returns that index: `get_registry(AsyncRedis).get("users")`.
 
@@ -101,3 +120,7 @@ pip install build twine
 python -m build
 twine upload dist/*
 ```
+
+## Documentation
+
+- [Leaderboard](docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres

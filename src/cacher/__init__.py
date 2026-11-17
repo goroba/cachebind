@@ -4,16 +4,21 @@ from importlib.metadata import PackageNotFoundError, version
 
 from cacher.indexes import (
     AsyncKeyValueIndex,
+    AsyncOrderedSetIndex,
     AsyncSetIndex,
     Index,
     IndexRegistry,
     KeyValueBase,
     KeyValueIndex,
+    OrderedSetBase,
+    OrderedSetIndex,
     SetBase,
     SetIndex,
     build_async_key_value_index,
+    build_async_ordered_set_index,
     build_async_set_index,
     build_key_value_index,
+    build_ordered_set_index,
     build_set_index,
     get_registry,
 )
@@ -27,7 +32,14 @@ from cacher.serializers import (
     Serializer,
     StrSerializer,
 )
-from cacher.storage import AsyncKeyValueStorage, AsyncSetStorage, KeyValueStorage, SetStorage
+from cacher.storage import (
+    AsyncKeyValueStorage,
+    AsyncOrderedSetStorage,
+    AsyncSetStorage,
+    KeyValueStorage,
+    OrderedSetStorage,
+    SetStorage,
+)
 
 try:
     __version__ = version("cacher")
@@ -37,6 +49,8 @@ except PackageNotFoundError:
 __all__ = [
     "AsyncKeyValueIndex",
     "AsyncKeyValueStorage",
+    "AsyncOrderedSetIndex",
+    "AsyncOrderedSetStorage",
     "AsyncSetIndex",
     "AsyncSetStorage",
     "BoolSerializer",
@@ -50,6 +64,9 @@ __all__ = [
     "KeyValueBase",
     "KeyValueIndex",
     "KeyValueStorage",
+    "OrderedSetBase",
+    "OrderedSetIndex",
+    "OrderedSetStorage",
     "Serializer",
     "SetBase",
     "SetIndex",
@@ -57,8 +74,10 @@ __all__ = [
     "StrSerializer",
     "__version__",
     "build_async_key_value_index",
+    "build_async_ordered_set_index",
     "build_async_set_index",
     "build_key_value_index",
+    "build_ordered_set_index",
     "build_set_index",
     "get_registry",
 ]
