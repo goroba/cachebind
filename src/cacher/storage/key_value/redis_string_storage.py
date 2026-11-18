@@ -57,6 +57,12 @@ class RedisStringStorage(KeyValueStorage[Redis, str, str]):
         pipe.execute()
 
     def swap(self, client: Redis, name: str) -> str:
-        raise NotImplementedError(
-            f"{type(self).__name__} keeps one Redis key per field and cannot swap"
+        raise self._unsupported("swap")
+
+    def drop(self, client: Redis, name: str) -> None:
+        raise self._unsupported("drop")
+
+    def _unsupported(self, method: str) -> NotImplementedError:
+        return NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot {method}"
         )

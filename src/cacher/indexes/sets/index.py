@@ -44,3 +44,7 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
     def swap(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(self.storage.swap(client, self.key))
+
+    def drop(self, client: ClientType) -> None:
+        """Delete the key this index is bound to. A missing key is not an error."""
+        self.storage.drop(client, self.key)

@@ -105,6 +105,9 @@ class MemoryStorage(KeyValueStorage[Memory, str, str]):
     def swap(self, client: Memory, name: str) -> str:
         return f"{name}:swap"
 
+    def drop(self, client: Memory, name: str) -> None:
+        return None
+
 
 class BytesStorage(KeyValueStorage[Memory, str, bytes]):
     pass
@@ -453,6 +456,10 @@ def test_hash_index_swap_detaches_data() -> None:
     index.set(client, 2, 20)
     assert index.get(client, 2) == 20
     assert snapshot.get(client, 2) is None
+    snapshot.drop(client)
+    assert registry.get("swap_hash_users") is index
+    assert index.get(client, 2) == 20
+    assert snapshot.get(client, 1) is None
 
 
 def test_hash_index_swap_of_missing_key() -> None:
@@ -469,6 +476,8 @@ def test_hash_index_swap_of_missing_key() -> None:
     assert snapshot.key not in get_registry(Redis)
     assert index.get(client, 1) is None
     assert snapshot.get(client, 1) is None
+    index.drop(client)
+    snapshot.drop(client)
 
 
 def test_async_hash_index_swap_detaches_data() -> None:
@@ -493,6 +502,10 @@ def test_async_hash_index_swap_detaches_data() -> None:
             await index.set(client, 2, 20)
             assert await index.get(client, 2) == 20
             assert await snapshot.get(client, 2) is None
+            await snapshot.drop(client)
+            assert registry.get("async_swap_hash_users") is index
+            assert await index.get(client, 2) == 20
+            assert await snapshot.get(client, 1) is None
 
             missing = build_async_key_value_index(
                 "async_swap_hash_missing",
@@ -506,6 +519,8 @@ def test_async_hash_index_swap_detaches_data() -> None:
             assert empty.key not in registry
             assert await missing.get(client, 1) is None
             assert await empty.get(client, 1) is None
+            await missing.drop(client)
+            await empty.drop(client)
         finally:
             await client.aclose()
 
@@ -523,6 +538,8 @@ def test_string_index_swap_is_rejected() -> None:
     )
     with pytest.raises(NotImplementedError):
         index.swap(client)
+    with pytest.raises(NotImplementedError):
+        index.drop(client)
     assert get_registry(Redis).get("swap_string_users") is index
 
 
@@ -539,6 +556,8 @@ def test_async_string_index_swap_is_rejected() -> None:
         try:
             with pytest.raises(NotImplementedError):
                 await index.swap(client)
+            with pytest.raises(NotImplementedError):
+                await index.drop(client)
             assert get_registry(AsyncRedis).get("async_swap_string_users") is index
         finally:
             await client.aclose()

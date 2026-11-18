@@ -306,6 +306,10 @@ def test_set_index_swap_detaches_data() -> None:
     index.add(client, 2)
     assert index.contains(client, 2) is True
     assert snapshot.contains(client, 2) is False
+    snapshot.drop(client)
+    assert registry.get("swap_active_users") is index
+    assert index.contains(client, 2) is True
+    assert snapshot.contains(client, 1) is False
 
     missing = build_set_index(
         "swap_active_missing",
@@ -318,6 +322,8 @@ def test_set_index_swap_detaches_data() -> None:
     assert empty.key not in registry
     assert missing.contains(client, 1) is False
     assert empty.contains(client, 1) is False
+    missing.drop(client)
+    empty.drop(client)
 
 
 def test_async_set_index_swap_detaches_data() -> None:
@@ -341,6 +347,10 @@ def test_async_set_index_swap_detaches_data() -> None:
             await index.add(client, 2)
             assert await index.contains(client, 2) is True
             assert await snapshot.contains(client, 2) is False
+            await snapshot.drop(client)
+            assert registry.get("async_swap_active_users") is index
+            assert await index.contains(client, 2) is True
+            assert await snapshot.contains(client, 1) is False
 
             missing = build_async_set_index(
                 "async_swap_active_missing",
@@ -352,6 +362,8 @@ def test_async_set_index_swap_detaches_data() -> None:
             assert registry.get("async_swap_active_missing") is missing
             assert await missing.contains(client, 1) is False
             assert await empty.contains(client, 1) is False
+            await missing.drop(client)
+            await empty.drop(client)
         finally:
             await client.aclose()
 

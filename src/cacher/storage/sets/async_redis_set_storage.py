@@ -30,3 +30,6 @@ class AsyncRedisSetStorage(AsyncSetStorage[AsyncRedis, str]):
 
     async def swap(self, client: AsyncRedis, name: str) -> str:
         return await async_swap_key(client, name)
+
+    async def drop(self, client: AsyncRedis, name: str) -> None:
+        await client.delete(name)

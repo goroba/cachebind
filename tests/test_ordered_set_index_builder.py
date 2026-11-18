@@ -447,6 +447,10 @@ def test_ordered_set_index_swap_detaches_data() -> None:
     index.add(client, 2, 2.0)
     assert index.score(client, 2) == 2.0
     assert snapshot.score(client, 2) is None
+    snapshot.drop(client)
+    assert registry.get("swap_leaderboard") is index
+    assert index.score(client, 2) == 2.0
+    assert snapshot.score(client, 1) is None
 
     missing = build_ordered_set_index(
         "swap_leaderboard_missing",
@@ -459,6 +463,8 @@ def test_ordered_set_index_swap_detaches_data() -> None:
     assert empty.key not in registry
     assert missing.score(client, 1) is None
     assert empty.score(client, 1) is None
+    missing.drop(client)
+    empty.drop(client)
 
 
 def test_async_ordered_set_index_swap_detaches_data() -> None:
@@ -482,6 +488,10 @@ def test_async_ordered_set_index_swap_detaches_data() -> None:
             await index.add(client, 2, 2.0)
             assert await index.score(client, 2) == 2.0
             assert await snapshot.score(client, 2) is None
+            await snapshot.drop(client)
+            assert registry.get("async_swap_leaderboard") is index
+            assert await index.score(client, 2) == 2.0
+            assert await snapshot.score(client, 1) is None
 
             missing = build_async_ordered_set_index(
                 "async_swap_leaderboard_missing",
@@ -493,6 +503,8 @@ def test_async_ordered_set_index_swap_detaches_data() -> None:
             assert registry.get("async_swap_leaderboard_missing") is missing
             assert await missing.score(client, 1) is None
             assert await empty.score(client, 1) is None
+            await missing.drop(client)
+            await empty.drop(client)
         finally:
             await client.aclose()
 

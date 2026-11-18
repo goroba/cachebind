@@ -14,7 +14,8 @@ class AsyncOrderedSetStorage[ClientType, MemberType: Hashable](Protocol):
     Removing a missing member is not an error.
     ``rank`` is 0-based and ascending. ``rev_rank`` is 0-based and descending.
     A range includes ``start`` and ``stop``.
-    A storage that cannot treat ``name`` as one key raises ``NotImplementedError`` from ``swap``.
+    A storage that cannot treat ``name`` as one key raises ``NotImplementedError``
+    from ``swap`` and ``drop``.
     """
 
     async def add(self, client: ClientType, name: str, member: MemberType, score: float) -> None:
@@ -77,4 +78,8 @@ class AsyncOrderedSetStorage[ClientType, MemberType: Hashable](Protocol):
 
     async def swap(self, client: ClientType, name: str) -> str:
         """Rename ``name`` aside and return the new name. A missing name still returns one."""
+        ...
+
+    async def drop(self, client: ClientType, name: str) -> None:
+        """Delete ``name``. A missing name is not an error."""
         ...

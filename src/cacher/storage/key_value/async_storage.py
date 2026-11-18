@@ -12,7 +12,8 @@ class AsyncKeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protoco
     ``name`` is the storage name. ``field`` identifies one stored value.
     ``ttl`` is a whole number of seconds. ``None`` means the write does not expire.
     ``mset`` applies one TTL to every field.
-    A storage that cannot treat ``name`` as one key raises ``NotImplementedError`` from ``swap``.
+    A storage that cannot treat ``name`` as one key raises ``NotImplementedError``
+    from ``swap`` and ``drop``.
     """
 
     async def get(self, client: ClientType, name: str, field: FieldType) -> StorageType | None:
@@ -62,4 +63,8 @@ class AsyncKeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protoco
 
     async def swap(self, client: ClientType, name: str) -> str:
         """Rename ``name`` aside and return the new name. A missing name still returns one."""
+        ...
+
+    async def drop(self, client: ClientType, name: str) -> None:
+        """Delete ``name``. A missing name is not an error."""
         ...

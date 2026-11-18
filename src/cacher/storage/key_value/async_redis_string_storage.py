@@ -57,6 +57,12 @@ class AsyncRedisStringStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
         await pipe.execute()
 
     async def swap(self, client: AsyncRedis, name: str) -> str:
-        raise NotImplementedError(
-            f"{type(self).__name__} keeps one Redis key per field and cannot swap"
+        raise self._unsupported("swap")
+
+    async def drop(self, client: AsyncRedis, name: str) -> None:
+        raise self._unsupported("drop")
+
+    def _unsupported(self, method: str) -> NotImplementedError:
+        return NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot {method}"
         )

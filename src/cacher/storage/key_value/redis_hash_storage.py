@@ -48,3 +48,6 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
 
     def swap(self, client: Redis, name: str) -> str:
         return swap_key(client, name)
+
+    def drop(self, client: Redis, name: str) -> None:
+        client.delete(name)
