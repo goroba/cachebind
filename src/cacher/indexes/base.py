@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import ClassVar, Self
 
 from cacher.indexes.registry import IndexRegistry
 
@@ -34,6 +34,12 @@ class Index:
             registry = IndexRegistry(client_type)
             _registries[client_type] = registry
         registry.set(key, cls())
+
+    def detach(self, key: str) -> Self:
+        """Return an unregistered copy of this index bound to ``key``."""
+        clone = type(self)()
+        clone.key = key
+        return clone
 
 
 def get_registry(client_type: type) -> IndexRegistry:

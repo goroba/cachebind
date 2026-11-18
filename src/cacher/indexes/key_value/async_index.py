@@ -1,6 +1,7 @@
 """Asynchronous key-value index."""
 
 from collections.abc import Hashable, Mapping, Sequence
+from typing import Self
 
 from cacher.indexes.key_value.base import KeyValueBase
 from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
@@ -62,3 +63,7 @@ class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         values = self.serializer.mserialize(list(items.values()))
         mapping = dict(zip(fields, values, strict=True))
         await self.storage.mset(client, self.key, mapping, ttl=ttl)
+
+    async def swap(self, client: ClientType) -> Self:
+        """Rename this index aside and return an unregistered index for that data."""
+        return self.detach(await self.storage.swap(client, self.key))

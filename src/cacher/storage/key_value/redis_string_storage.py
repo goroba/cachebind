@@ -55,3 +55,8 @@ class RedisStringStorage(KeyValueStorage[Redis, str, str]):
         for key, value in mapping.items():
             pipe.set(key, value, ex=ttl)
         pipe.execute()
+
+    def swap(self, client: Redis, name: str) -> str:
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot swap"
+        )

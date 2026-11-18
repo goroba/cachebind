@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import Sequence
 
 import fakeredis
+import pytest
 
 from cacher.storage import AsyncRedisStringStorage, RedisStringStorage
 from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
@@ -149,6 +150,26 @@ def test_async_storage_decodes_bytes() -> None:
             assert await client.get("users:a") == b"hello"
             assert await storage.get(client, _NAME, "a") == "hello"
             assert await storage.mget(client, _NAME, ["a", "missing"]) == ["hello", None]
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_sync_string_storage_rejects_swap() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisStringStorage()
+    with pytest.raises(NotImplementedError):
+        storage.swap(client, _NAME)
+
+
+def test_async_string_storage_rejects_swap() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        storage = AsyncRedisStringStorage()
+        try:
+            with pytest.raises(NotImplementedError):
+                await storage.swap(client, _NAME)
         finally:
             await client.aclose()
 

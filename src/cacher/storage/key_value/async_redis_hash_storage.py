@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping, Sequence
 
-from cacher.storage._redis import AsyncRedis, decode
+from cacher.storage._redis import AsyncRedis, async_swap_key, decode
 from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
 
 
@@ -45,3 +45,6 @@ class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
         await client.hset(name, mapping=mapping)
         if ttl is not None:
             await client.hexpire(name, ttl, *mapping)
+
+    async def swap(self, client: AsyncRedis, name: str) -> str:
+        return await async_swap_key(client, name)

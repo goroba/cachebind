@@ -12,6 +12,7 @@ class SetStorage[ClientType, MemberType: Hashable](Protocol):
     ``name`` is the set name. ``member`` is one element of that set.
     Adding a member that is already present is not an error.
     Removing a missing member is not an error.
+    A storage that cannot treat ``name`` as one key raises ``NotImplementedError`` from ``swap``.
     """
 
     def add(self, client: ClientType, name: str, member: MemberType) -> None:
@@ -32,4 +33,8 @@ class SetStorage[ClientType, MemberType: Hashable](Protocol):
 
     def contains(self, client: ClientType, name: str, member: MemberType) -> bool:
         """Return whether ``member`` is in the set."""
+        ...
+
+    def swap(self, client: ClientType, name: str) -> str:
+        """Rename ``name`` aside and return the new name. A missing name still returns one."""
         ...

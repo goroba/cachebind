@@ -284,3 +284,75 @@ def test_async_empty_set_batches_do_not_call_storage() -> None:
 
     asyncio.run(scenario())
     assert storage.called is False
+
+
+def test_set_index_swap_detaches_data() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_set_index(
+        "swap_active_users",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisSetStorage(),
+    )
+    index.add(client, 1)
+    snapshot = index.swap(client)
+    registry = get_registry(Redis)
+    assert registry.get("swap_active_users") is index
+    assert snapshot is not index
+    assert snapshot.key.startswith("swap_active_users:swap:")
+    assert snapshot.key not in registry
+    assert index.contains(client, 1) is False
+    assert snapshot.contains(client, 1) is True
+    index.add(client, 2)
+    assert index.contains(client, 2) is True
+    assert snapshot.contains(client, 2) is False
+
+    missing = build_set_index(
+        "swap_active_missing",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisSetStorage(),
+    )
+    empty = missing.swap(client)
+    assert registry.get("swap_active_missing") is missing
+    assert empty.key not in registry
+    assert missing.contains(client, 1) is False
+    assert empty.contains(client, 1) is False
+
+
+def test_async_set_index_swap_detaches_data() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_set_index(
+            "async_swap_active_users",
+            member_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisSetStorage(),
+        )
+        try:
+            await index.add(client, 1)
+            snapshot = await index.swap(client)
+            registry = get_registry(AsyncRedis)
+            assert registry.get("async_swap_active_users") is index
+            assert snapshot is not index
+            assert snapshot.key not in registry
+            assert await index.contains(client, 1) is False
+            assert await snapshot.contains(client, 1) is True
+            await index.add(client, 2)
+            assert await index.contains(client, 2) is True
+            assert await snapshot.contains(client, 2) is False
+
+            missing = build_async_set_index(
+                "async_swap_active_missing",
+                member_type=int,
+                serializer=IntSerializer(),
+                storage=AsyncRedisSetStorage(),
+            )
+            empty = await missing.swap(client)
+            assert registry.get("async_swap_active_missing") is missing
+            assert await missing.contains(client, 1) is False
+            assert await empty.contains(client, 1) is False
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())

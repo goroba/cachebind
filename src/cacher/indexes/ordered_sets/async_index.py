@@ -1,6 +1,7 @@
 """Asynchronous ordered-set index."""
 
 from collections.abc import Hashable, Sequence
+from typing import Self
 
 from cacher.indexes.ordered_sets.base import OrderedSetBase, _empty_range
 from cacher.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
@@ -89,3 +90,7 @@ class AsyncOrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         raw = await self.storage.rev_range_with_scores(client, self.key, start, stop)
         members = self.serializer.mdeserialize([member for member, _score in raw])
         return list(zip(members, (score for _member, score in raw), strict=True))
+
+    async def swap(self, client: ClientType) -> Self:
+        """Rename this index aside and return an unregistered index for that data."""
+        return self.detach(await self.storage.swap(client, self.key))

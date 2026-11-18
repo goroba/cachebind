@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping, Sequence
 
-from cacher.storage._redis import Redis, decode
+from cacher.storage._redis import Redis, decode, swap_key
 from cacher.storage.key_value.storage import KeyValueStorage
 
 
@@ -45,3 +45,6 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
         client.hset(name, mapping=mapping)
         if ttl is not None:
             client.hexpire(name, ttl, *mapping)
+
+    def swap(self, client: Redis, name: str) -> str:
+        return swap_key(client, name)

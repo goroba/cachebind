@@ -1,6 +1,7 @@
 """Synchronous key-value index."""
 
 from collections.abc import Hashable, Mapping, Sequence
+from typing import Self
 
 from cacher.indexes.key_value.base import KeyValueBase
 from cacher.storage.key_value.storage import KeyValueStorage
@@ -62,3 +63,7 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         values = self.serializer.mserialize(list(items.values()))
         mapping = dict(zip(fields, values, strict=True))
         self.storage.mset(client, self.key, mapping, ttl=ttl)
+
+    def swap(self, client: ClientType) -> Self:
+        """Rename this index aside and return an unregistered index for that data."""
+        return self.detach(self.storage.swap(client, self.key))

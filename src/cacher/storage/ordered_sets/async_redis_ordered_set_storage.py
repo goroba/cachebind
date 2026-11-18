@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 
-from cacher.storage._redis import AsyncRedis
+from cacher.storage._redis import AsyncRedis, async_swap_key
 from cacher.storage.ordered_sets._values import (
     empty_range,
     members_from_range,
@@ -69,3 +69,6 @@ class AsyncRedisOrderedSetStorage(AsyncOrderedSetStorage[AsyncRedis, str]):
         if empty_range(start, stop):
             return []
         return pairs_from_range(await client.zrevrange(name, start, stop, withscores=True))
+
+    async def swap(self, client: AsyncRedis, name: str) -> str:
+        return await async_swap_key(client, name)

@@ -1,6 +1,7 @@
 """Synchronous ordered-set index."""
 
 from collections.abc import Hashable, Sequence
+from typing import Self
 
 from cacher.indexes.ordered_sets.base import OrderedSetBase, _empty_range
 from cacher.storage.ordered_sets.storage import OrderedSetStorage
@@ -87,3 +88,7 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         raw = self.storage.rev_range_with_scores(client, self.key, start, stop)
         members = self.serializer.mdeserialize([member for member, _score in raw])
         return list(zip(members, (score for _member, score in raw), strict=True))
+
+    def swap(self, client: ClientType) -> Self:
+        """Rename this index aside and return an unregistered index for that data."""
+        return self.detach(self.storage.swap(client, self.key))

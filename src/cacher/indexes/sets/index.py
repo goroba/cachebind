@@ -1,6 +1,7 @@
 """Synchronous set index."""
 
 from collections.abc import Hashable, Sequence
+from typing import Self
 
 from cacher.indexes.sets.base import SetBase
 from cacher.storage.sets.storage import SetStorage
@@ -39,3 +40,7 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
     def contains(self, client: ClientType, member: MemberType) -> bool:
         """Return whether ``member`` is in the set."""
         return self.storage.contains(client, self.key, self.serializer.serialize(member))
+
+    def swap(self, client: ClientType) -> Self:
+        """Rename this index aside and return an unregistered index for that data."""
+        return self.detach(self.storage.swap(client, self.key))

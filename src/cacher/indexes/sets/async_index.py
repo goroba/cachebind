@@ -1,6 +1,7 @@
 """Asynchronous set index."""
 
 from collections.abc import Hashable, Sequence
+from typing import Self
 
 from cacher.indexes.sets.base import SetBase
 from cacher.storage.sets.async_storage import AsyncSetStorage
@@ -39,3 +40,7 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
     async def contains(self, client: ClientType, member: MemberType) -> bool:
         """Return whether ``member`` is in the set."""
         return await self.storage.contains(client, self.key, self.serializer.serialize(member))
+
+    async def swap(self, client: ClientType) -> Self:
+        """Rename this index aside and return an unregistered index for that data."""
+        return self.detach(await self.storage.swap(client, self.key))

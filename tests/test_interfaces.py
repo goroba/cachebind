@@ -176,6 +176,9 @@ class MemoryHash:
     ) -> None:
         return None
 
+    def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
+
 
 class AsyncMemoryHash:
     async def get(self, client: object, name: str, field: str) -> str | None:
@@ -203,6 +206,9 @@ class AsyncMemoryHash:
     ) -> None:
         return None
 
+    async def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
+
 
 class MemorySet:
     def add(self, client: object, name: str, member: str) -> None:
@@ -220,6 +226,9 @@ class MemorySet:
     def contains(self, client: object, name: str, member: str) -> bool:
         return False
 
+    def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
+
 
 class AsyncMemorySet:
     async def add(self, client: object, name: str, member: str) -> None:
@@ -236,6 +245,9 @@ class AsyncMemorySet:
 
     async def contains(self, client: object, name: str, member: str) -> bool:
         return False
+
+    async def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
 
 
 class MemoryOrderedSet:
@@ -278,6 +290,9 @@ class MemoryOrderedSet:
         self, client: object, name: str, start: int, stop: int
     ) -> list[tuple[str, float]]:
         return []
+
+    def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
 
 
 class AsyncMemoryOrderedSet:
@@ -322,6 +337,9 @@ class AsyncMemoryOrderedSet:
         self, client: object, name: str, start: int, stop: int
     ) -> list[tuple[str, float]]:
         return []
+
+    async def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
 
 
 def test_storage_protocols() -> None:

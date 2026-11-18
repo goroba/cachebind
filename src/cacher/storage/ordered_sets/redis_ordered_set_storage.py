@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 
-from cacher.storage._redis import Redis
+from cacher.storage._redis import Redis, swap_key
 from cacher.storage.ordered_sets._values import (
     empty_range,
     members_from_range,
@@ -67,3 +67,6 @@ class RedisOrderedSetStorage(OrderedSetStorage[Redis, str]):
         if empty_range(start, stop):
             return []
         return pairs_from_range(client.zrevrange(name, start, stop, withscores=True))
+
+    def swap(self, client: Redis, name: str) -> str:
+        return swap_key(client, name)

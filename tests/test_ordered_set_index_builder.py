@@ -425,3 +425,75 @@ def test_async_empty_ordered_set_batches_do_not_call_storage() -> None:
 
     asyncio.run(scenario())
     assert storage.called is False
+
+
+def test_ordered_set_index_swap_detaches_data() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "swap_leaderboard",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    index.add(client, 1, 1.0)
+    snapshot = index.swap(client)
+    registry = get_registry(Redis)
+    assert registry.get("swap_leaderboard") is index
+    assert snapshot is not index
+    assert snapshot.key.startswith("swap_leaderboard:swap:")
+    assert snapshot.key not in registry
+    assert index.score(client, 1) is None
+    assert snapshot.score(client, 1) == 1.0
+    index.add(client, 2, 2.0)
+    assert index.score(client, 2) == 2.0
+    assert snapshot.score(client, 2) is None
+
+    missing = build_ordered_set_index(
+        "swap_leaderboard_missing",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    empty = missing.swap(client)
+    assert registry.get("swap_leaderboard_missing") is missing
+    assert empty.key not in registry
+    assert missing.score(client, 1) is None
+    assert empty.score(client, 1) is None
+
+
+def test_async_ordered_set_index_swap_detaches_data() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_ordered_set_index(
+            "async_swap_leaderboard",
+            member_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisOrderedSetStorage(),
+        )
+        try:
+            await index.add(client, 1, 1.0)
+            snapshot = await index.swap(client)
+            registry = get_registry(AsyncRedis)
+            assert registry.get("async_swap_leaderboard") is index
+            assert snapshot is not index
+            assert snapshot.key not in registry
+            assert await index.score(client, 1) is None
+            assert await snapshot.score(client, 1) == 1.0
+            await index.add(client, 2, 2.0)
+            assert await index.score(client, 2) == 2.0
+            assert await snapshot.score(client, 2) is None
+
+            missing = build_async_ordered_set_index(
+                "async_swap_leaderboard_missing",
+                member_type=int,
+                serializer=IntSerializer(),
+                storage=AsyncRedisOrderedSetStorage(),
+            )
+            empty = await missing.swap(client)
+            assert registry.get("async_swap_leaderboard_missing") is missing
+            assert await missing.score(client, 1) is None
+            assert await empty.score(client, 1) is None
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())
