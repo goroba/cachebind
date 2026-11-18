@@ -435,6 +435,7 @@ def test_ordered_set_index_swap_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=RedisOrderedSetStorage(),
     )
+    index.add(client, 2, 2.0)
     index.add(client, 1, 1.0)
     snapshot = index.swap(client)
     registry = get_registry(Redis)
@@ -444,12 +445,14 @@ def test_ordered_set_index_swap_detaches_data() -> None:
     assert snapshot.key not in registry
     assert index.score(client, 1) is None
     assert snapshot.score(client, 1) == 1.0
-    index.add(client, 2, 2.0)
-    assert index.score(client, 2) == 2.0
-    assert snapshot.score(client, 2) is None
+    assert list(snapshot.iter(client)) == [(1, 1.0), (2, 2.0)]
+    index.add(client, 3, 3.0)
+    assert index.score(client, 3) == 3.0
+    assert snapshot.score(client, 3) is None
+    assert list(snapshot.iter(client)) == [(1, 1.0), (2, 2.0)]
     snapshot.drop(client)
     assert registry.get("swap_leaderboard") is index
-    assert index.score(client, 2) == 2.0
+    assert index.score(client, 3) == 3.0
     assert snapshot.score(client, 1) is None
 
     missing = build_ordered_set_index(
@@ -463,6 +466,8 @@ def test_ordered_set_index_swap_detaches_data() -> None:
     assert empty.key not in registry
     assert missing.score(client, 1) is None
     assert empty.score(client, 1) is None
+    assert list(missing.iter(client)) == []
+    assert list(empty.iter(client)) == []
     missing.drop(client)
     empty.drop(client)
 
@@ -477,6 +482,7 @@ def test_async_ordered_set_index_swap_detaches_data() -> None:
             storage=AsyncRedisOrderedSetStorage(),
         )
         try:
+            await index.add(client, 2, 2.0)
             await index.add(client, 1, 1.0)
             snapshot = await index.swap(client)
             registry = get_registry(AsyncRedis)
@@ -485,12 +491,14 @@ def test_async_ordered_set_index_swap_detaches_data() -> None:
             assert snapshot.key not in registry
             assert await index.score(client, 1) is None
             assert await snapshot.score(client, 1) == 1.0
-            await index.add(client, 2, 2.0)
-            assert await index.score(client, 2) == 2.0
-            assert await snapshot.score(client, 2) is None
+            assert [item async for item in snapshot.iter(client)] == [(1, 1.0), (2, 2.0)]
+            await index.add(client, 3, 3.0)
+            assert await index.score(client, 3) == 3.0
+            assert await snapshot.score(client, 3) is None
+            assert [item async for item in snapshot.iter(client)] == [(1, 1.0), (2, 2.0)]
             await snapshot.drop(client)
             assert registry.get("async_swap_leaderboard") is index
-            assert await index.score(client, 2) == 2.0
+            assert await index.score(client, 3) == 3.0
             assert await snapshot.score(client, 1) is None
 
             missing = build_async_ordered_set_index(
@@ -503,6 +511,8 @@ def test_async_ordered_set_index_swap_detaches_data() -> None:
             assert registry.get("async_swap_leaderboard_missing") is missing
             assert await missing.score(client, 1) is None
             assert await empty.score(client, 1) is None
+            assert [item async for item in missing.iter(client)] == []
+            assert [item async for item in empty.iter(client)] == []
             await missing.drop(client)
             await empty.drop(client)
         finally:

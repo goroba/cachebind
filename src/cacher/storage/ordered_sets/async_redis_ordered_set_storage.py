@@ -1,8 +1,8 @@
 """Asynchronous Redis ordered-set storage."""
 
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 
-from cacher.storage._redis import AsyncRedis, async_swap_key
+from cacher.storage._redis import SCAN_COUNT, AsyncRedis, async_swap_key
 from cacher.storage.ordered_sets._values import (
     empty_range,
     members_from_range,
@@ -75,3 +75,17 @@ class AsyncRedisOrderedSetStorage(AsyncOrderedSetStorage[AsyncRedis, str]):
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)
+
+    async def iter(
+        self, client: AsyncRedis, name: str, *, count: int = SCAN_COUNT
+    ) -> AsyncIterator[tuple[str, float]]:
+        start = 0
+        while True:
+            window = await self.range_with_scores(client, name, start, start + count - 1)
+            if not window:
+                return
+            for member, score in window:
+                yield member, score
+            if len(window) < count:
+                return
+            start += count

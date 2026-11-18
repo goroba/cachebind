@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from datetime import datetime, timezone
 from typing import Any, TypeVar
 from uuid import UUID
@@ -107,6 +107,9 @@ class MemoryStorage(KeyValueStorage[Memory, str, str]):
 
     def drop(self, client: Memory, name: str) -> None:
         return None
+
+    def iter(self, client: Memory, name: str) -> Iterator[tuple[str, str]]:
+        return iter(())
 
 
 class BytesStorage(KeyValueStorage[Memory, str, bytes]):
@@ -456,6 +459,7 @@ def test_hash_index_swap_detaches_data() -> None:
     index.set(client, 2, 20)
     assert index.get(client, 2) == 20
     assert snapshot.get(client, 2) is None
+    assert set(snapshot.iter(client)) == {("1", 10)}
     snapshot.drop(client)
     assert registry.get("swap_hash_users") is index
     assert index.get(client, 2) == 20
@@ -476,6 +480,8 @@ def test_hash_index_swap_of_missing_key() -> None:
     assert snapshot.key not in get_registry(Redis)
     assert index.get(client, 1) is None
     assert snapshot.get(client, 1) is None
+    assert list(index.iter(client)) == []
+    assert list(snapshot.iter(client)) == []
     index.drop(client)
     snapshot.drop(client)
 
@@ -502,6 +508,7 @@ def test_async_hash_index_swap_detaches_data() -> None:
             await index.set(client, 2, 20)
             assert await index.get(client, 2) == 20
             assert await snapshot.get(client, 2) is None
+            assert {item async for item in snapshot.iter(client)} == {("1", 10)}
             await snapshot.drop(client)
             assert registry.get("async_swap_hash_users") is index
             assert await index.get(client, 2) == 20
@@ -519,6 +526,8 @@ def test_async_hash_index_swap_detaches_data() -> None:
             assert empty.key not in registry
             assert await missing.get(client, 1) is None
             assert await empty.get(client, 1) is None
+            assert [item async for item in missing.iter(client)] == []
+            assert [item async for item in empty.iter(client)] == []
             await missing.drop(client)
             await empty.drop(client)
         finally:
@@ -540,6 +549,8 @@ def test_string_index_swap_is_rejected() -> None:
         index.swap(client)
     with pytest.raises(NotImplementedError):
         index.drop(client)
+    with pytest.raises(NotImplementedError):
+        index.iter(client)
     assert get_registry(Redis).get("swap_string_users") is index
 
 
@@ -558,8 +569,45 @@ def test_async_string_index_swap_is_rejected() -> None:
                 await index.swap(client)
             with pytest.raises(NotImplementedError):
                 await index.drop(client)
+            with pytest.raises(NotImplementedError):
+                async for _item in index.iter(client):
+                    pass
             assert get_registry(AsyncRedis).get("async_swap_string_users") is index
         finally:
             await client.aclose()
 
     asyncio.run(scenario())
+
+
+class _BatchSerializer(Serializer[int, str]):
+    def __init__(self) -> None:
+        self.sizes: list[int] = []
+
+    def serialize(self, value: int) -> str:
+        return str(value)
+
+    def deserialize(self, value: str) -> int:
+        return int(value)
+
+    def mdeserialize(self, values: Sequence[str]) -> list[int]:
+        self.sizes.append(len(values))
+        return [int(value) for value in values]
+
+
+class _ScanStorage(KeyValueStorage[Memory, str, str]):
+    def iter(self, client: Memory, name: str) -> Iterator[tuple[str, str]]:
+        for number in range(250):
+            yield str(number), str(number)
+
+
+def test_key_value_iter_deserializes_in_batches_of_100() -> None:
+    serializer = _BatchSerializer()
+    index = build_key_value_index(
+        "swap_hash_batches",
+        id_type=str,
+        model_type=int,
+        serializer=serializer,
+        storage=_ScanStorage(),
+    )
+    assert list(index.iter(Memory())) == [(str(number), number) for number in range(250)]
+    assert serializer.sizes == [100, 100, 50]

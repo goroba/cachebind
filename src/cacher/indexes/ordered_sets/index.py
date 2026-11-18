@@ -1,10 +1,13 @@
 """Synchronous ordered-set index."""
 
-from collections.abc import Hashable, Sequence
+from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import Self
 
 from cacher.indexes.ordered_sets.base import OrderedSetBase, _empty_range
+from cacher.serializers.serializer import Serializer
 from cacher.storage.ordered_sets.storage import OrderedSetStorage
+
+BATCH = 100
 
 
 class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
@@ -96,3 +99,28 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
     def drop(self, client: ClientType) -> None:
         """Delete the key this index is bound to. A missing key is not an error."""
         self.storage.drop(client, self.key)
+
+    def iter(self, client: ClientType) -> Iterator[tuple[MemberType, float]]:
+        """Yield each member and score under this index key, lowest score first."""
+        return scored(self.storage.iter(client, self.key), self.serializer)
+
+
+def scored[StorageType, ValueType](
+    raw: Iterable[tuple[StorageType, float]], serializer: Serializer[ValueType, StorageType]
+) -> Iterator[tuple[ValueType, float]]:
+    """Yield deserialized members and their scores, one ``mdeserialize`` per batch."""
+    batch: list[tuple[StorageType, float]] = []
+    for item in raw:
+        batch.append(item)
+        if len(batch) == BATCH:
+            yield from _scored(batch, serializer)
+            batch = []
+    if batch:
+        yield from _scored(batch, serializer)
+
+
+def _scored[StorageType, ValueType](
+    batch: list[tuple[StorageType, float]], serializer: Serializer[ValueType, StorageType]
+) -> Iterator[tuple[ValueType, float]]:
+    decoded = serializer.mdeserialize([member for member, _score in batch])
+    return zip(decoded, (score for _member, score in batch), strict=True)

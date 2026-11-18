@@ -162,3 +162,26 @@ def test_async_hash_storage_decodes_bytes() -> None:
             await client.aclose()
 
     asyncio.run(scenario())
+
+
+def test_sync_hash_storage_iter_pages_every_field() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisHashStorage()
+    storage.mset(client, "scan_users", {"1": "a", "2": "b", "3": "c"})
+    assert set(storage.iter(client, "scan_users", count=2)) == {("1", "a"), ("2", "b"), ("3", "c")}
+    assert list(storage.iter(client, "scan_missing")) == []
+
+
+def test_async_hash_storage_iter_pages_every_field() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        storage = AsyncRedisHashStorage()
+        try:
+            await storage.mset(client, "async_scan_users", {"1": "a", "2": "b", "3": "c"})
+            found = {item async for item in storage.iter(client, "async_scan_users", count=2)}
+            assert found == {("1", "a"), ("2", "b"), ("3", "c")}
+            assert [item async for item in storage.iter(client, "async_scan_missing")] == []
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())

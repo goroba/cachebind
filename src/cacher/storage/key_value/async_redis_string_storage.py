@@ -1,6 +1,6 @@
 """Asynchronous Redis string storage."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 
 from cacher.storage._redis import AsyncRedis, decode
 from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
@@ -57,12 +57,16 @@ class AsyncRedisStringStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
         await pipe.execute()
 
     async def swap(self, client: AsyncRedis, name: str) -> str:
-        raise self._unsupported("swap")
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot swap"
+        )
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
-        raise self._unsupported("drop")
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot drop"
+        )
 
-    def _unsupported(self, method: str) -> NotImplementedError:
-        return NotImplementedError(
-            f"{type(self).__name__} keeps one Redis key per field and cannot {method}"
+    def iter(self, client: AsyncRedis, name: str) -> AsyncIterator[tuple[str, str]]:
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot iter"
         )

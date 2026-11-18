@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 
 import pytest
 
@@ -182,6 +182,9 @@ class MemoryHash:
     def drop(self, client: object, name: str) -> None:
         return None
 
+    def iter(self, client: object, name: str) -> Iterator[object]:
+        return iter(())
+
 
 class AsyncMemoryHash:
     async def get(self, client: object, name: str, field: str) -> str | None:
@@ -215,6 +218,10 @@ class AsyncMemoryHash:
     async def drop(self, client: object, name: str) -> None:
         return None
 
+    async def iter(self, client: object, name: str) -> AsyncIterator[object]:
+        for _item in ():
+            yield _item
+
 
 class MemorySet:
     def add(self, client: object, name: str, member: str) -> None:
@@ -238,6 +245,9 @@ class MemorySet:
     def drop(self, client: object, name: str) -> None:
         return None
 
+    def iter(self, client: object, name: str) -> Iterator[object]:
+        return iter(())
+
 
 class AsyncMemorySet:
     async def add(self, client: object, name: str, member: str) -> None:
@@ -260,6 +270,10 @@ class AsyncMemorySet:
 
     async def drop(self, client: object, name: str) -> None:
         return None
+
+    async def iter(self, client: object, name: str) -> AsyncIterator[object]:
+        for _item in ():
+            yield _item
 
 
 class MemoryOrderedSet:
@@ -308,6 +322,9 @@ class MemoryOrderedSet:
 
     def drop(self, client: object, name: str) -> None:
         return None
+
+    def iter(self, client: object, name: str) -> Iterator[object]:
+        return iter(())
 
 
 class AsyncMemoryOrderedSet:
@@ -358,6 +375,10 @@ class AsyncMemoryOrderedSet:
 
     async def drop(self, client: object, name: str) -> None:
         return None
+
+    async def iter(self, client: object, name: str) -> AsyncIterator[object]:
+        for _item in ():
+            yield _item
 
 
 def test_storage_protocols() -> None:

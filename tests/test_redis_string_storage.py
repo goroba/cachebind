@@ -163,6 +163,8 @@ def test_sync_string_storage_rejects_swap() -> None:
         storage.swap(client, _NAME)
     with pytest.raises(NotImplementedError):
         storage.drop(client, _NAME)
+    with pytest.raises(NotImplementedError):
+        storage.iter(client, _NAME)
 
 
 def test_async_string_storage_rejects_swap() -> None:
@@ -174,6 +176,8 @@ def test_async_string_storage_rejects_swap() -> None:
                 await storage.swap(client, _NAME)
             with pytest.raises(NotImplementedError):
                 await storage.drop(client, _NAME)
+            with pytest.raises(NotImplementedError):
+                storage.iter(client, _NAME)
         finally:
             await client.aclose()
 

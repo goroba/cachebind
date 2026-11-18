@@ -1,8 +1,14 @@
 """Asynchronous Redis set storage."""
 
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 
-from cacher.storage._redis import AsyncRedis, async_swap_key
+from cacher.storage._redis import (
+    SCAN_COUNT,
+    AsyncRedis,
+    async_swap_key,
+    required_text,
+    scan_done,
+)
 from cacher.storage.sets.async_storage import AsyncSetStorage
 
 
@@ -33,3 +39,16 @@ class AsyncRedisSetStorage(AsyncSetStorage[AsyncRedis, str]):
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)
+
+    async def iter(
+        self, client: AsyncRedis, name: str, *, count: int = SCAN_COUNT
+    ) -> AsyncIterator[str]:
+        cursor: object = 0
+        while True:
+            cursor, raw = await client.sscan(name, cursor=cursor, count=count)
+            if not isinstance(raw, list):
+                raise TypeError(f"unexpected Redis set scan type: {type(raw).__name__}")
+            for member in raw:
+                yield required_text(member)
+            if scan_done(cursor):
+                return

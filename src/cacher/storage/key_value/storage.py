@@ -1,6 +1,6 @@
 """Synchronous key-value storage."""
 
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Hashable, Iterator, Mapping, Sequence
 from typing import Protocol, runtime_checkable
 
 
@@ -13,7 +13,7 @@ class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protocol):
     ``ttl`` is a whole number of seconds. ``None`` means the write does not expire.
     ``mset`` applies one TTL to every field.
     A storage that cannot treat ``name`` as one key raises ``NotImplementedError``
-    from ``swap`` and ``drop``.
+    from ``swap``, ``drop``, and ``iter``.
     """
 
     def get(self, client: ClientType, name: str, field: FieldType) -> StorageType | None:
@@ -67,4 +67,8 @@ class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protocol):
 
     def drop(self, client: ClientType, name: str) -> None:
         """Delete ``name``. A missing name is not an error."""
+        ...
+
+    def iter(self, client: ClientType, name: str) -> Iterator[tuple[FieldType, StorageType]]:
+        """Yield every field and its stored value under ``name``."""
         ...

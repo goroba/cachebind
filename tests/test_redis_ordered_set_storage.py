@@ -172,3 +172,30 @@ def test_async_ordered_set_storage_empty_batches_do_not_call_redis() -> None:
 
     asyncio.run(scenario())
     assert spy.called is False
+
+
+def test_sync_ordered_set_storage_iter_is_ascending() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisOrderedSetStorage()
+    storage.madd(client, "scan_scores", [("2", 2.0), ("1", 1.0), ("3", 3.0)])
+    assert list(storage.iter(client, "scan_scores", count=2)) == [
+        ("1", 1.0),
+        ("2", 2.0),
+        ("3", 3.0),
+    ]
+    assert list(storage.iter(client, "scan_missing")) == []
+
+
+def test_async_ordered_set_storage_iter_is_ascending() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        storage = AsyncRedisOrderedSetStorage()
+        try:
+            await storage.madd(client, "async_scan_scores", [("2", 2.0), ("1", 1.0), ("3", 3.0)])
+            found = [item async for item in storage.iter(client, "async_scan_scores", count=2)]
+            assert found == [("1", 1.0), ("2", 2.0), ("3", 3.0)]
+            assert [item async for item in storage.iter(client, "async_scan_missing")] == []
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())

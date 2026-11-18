@@ -1,6 +1,6 @@
 """Synchronous Redis string storage."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 
 from cacher.storage._redis import Redis, decode
 from cacher.storage.key_value.storage import KeyValueStorage
@@ -57,12 +57,16 @@ class RedisStringStorage(KeyValueStorage[Redis, str, str]):
         pipe.execute()
 
     def swap(self, client: Redis, name: str) -> str:
-        raise self._unsupported("swap")
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot swap"
+        )
 
     def drop(self, client: Redis, name: str) -> None:
-        raise self._unsupported("drop")
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot drop"
+        )
 
-    def _unsupported(self, method: str) -> NotImplementedError:
-        return NotImplementedError(
-            f"{type(self).__name__} keeps one Redis key per field and cannot {method}"
+    def iter(self, client: Redis, name: str) -> Iterator[tuple[str, str]]:
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot iter"
         )

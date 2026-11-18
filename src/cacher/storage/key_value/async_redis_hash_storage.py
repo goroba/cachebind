@@ -1,8 +1,15 @@
 """Asynchronous Redis hash storage."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 
-from cacher.storage._redis import AsyncRedis, async_swap_key, decode
+from cacher.storage._redis import (
+    SCAN_COUNT,
+    AsyncRedis,
+    async_swap_key,
+    decode,
+    required_text,
+    scan_done,
+)
 from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
 
 
@@ -51,3 +58,16 @@ class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)
+
+    async def iter(
+        self, client: AsyncRedis, name: str, *, count: int = SCAN_COUNT
+    ) -> AsyncIterator[tuple[str, str]]:
+        cursor: object = 0
+        while True:
+            cursor, raw = await client.hscan(name, cursor=cursor, count=count)
+            if not isinstance(raw, dict):
+                raise TypeError(f"unexpected Redis hash scan type: {type(raw).__name__}")
+            for field, value in raw.items():
+                yield required_text(field), required_text(value)
+            if scan_done(cursor):
+                return

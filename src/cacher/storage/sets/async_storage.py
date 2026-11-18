@@ -1,6 +1,6 @@
 """Asynchronous set storage."""
 
-from collections.abc import Hashable, Sequence
+from collections.abc import AsyncIterator, Hashable, Sequence
 from typing import Protocol, runtime_checkable
 
 
@@ -13,7 +13,7 @@ class AsyncSetStorage[ClientType, MemberType: Hashable](Protocol):
     Adding a member that is already present is not an error.
     Removing a missing member is not an error.
     A storage that cannot treat ``name`` as one key raises ``NotImplementedError``
-    from ``swap`` and ``drop``.
+    from ``swap``, ``drop``, and ``iter``.
     """
 
     async def add(self, client: ClientType, name: str, member: MemberType) -> None:
@@ -42,4 +42,8 @@ class AsyncSetStorage[ClientType, MemberType: Hashable](Protocol):
 
     async def drop(self, client: ClientType, name: str) -> None:
         """Delete ``name``. A missing name is not an error."""
+        ...
+
+    def iter(self, client: ClientType, name: str) -> AsyncIterator[MemberType]:
+        """Yield every member stored under ``name``."""
         ...

@@ -98,3 +98,26 @@ def test_async_set_storage_empty_batches_do_not_call_redis() -> None:
 
     asyncio.run(scenario())
     assert spy.called is False
+
+
+def test_sync_set_storage_iter_pages_every_member() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisSetStorage()
+    storage.madd(client, "scan_users", ["1", "2", "3"])
+    assert set(storage.iter(client, "scan_users", count=2)) == {"1", "2", "3"}
+    assert list(storage.iter(client, "scan_missing")) == []
+
+
+def test_async_set_storage_iter_pages_every_member() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        storage = AsyncRedisSetStorage()
+        try:
+            await storage.madd(client, "async_scan_users", ["1", "2", "3"])
+            found = {member async for member in storage.iter(client, "async_scan_users", count=2)}
+            assert found == {"1", "2", "3"}
+            assert [member async for member in storage.iter(client, "async_scan_missing")] == []
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())

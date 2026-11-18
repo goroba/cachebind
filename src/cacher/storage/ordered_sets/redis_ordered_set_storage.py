@@ -1,8 +1,8 @@
 """Synchronous Redis ordered-set storage."""
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 
-from cacher.storage._redis import Redis, swap_key
+from cacher.storage._redis import SCAN_COUNT, Redis, swap_key
 from cacher.storage.ordered_sets._values import (
     empty_range,
     members_from_range,
@@ -73,3 +73,16 @@ class RedisOrderedSetStorage(OrderedSetStorage[Redis, str]):
 
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)
+
+    def iter(
+        self, client: Redis, name: str, *, count: int = SCAN_COUNT
+    ) -> Iterator[tuple[str, float]]:
+        start = 0
+        while True:
+            window = self.range_with_scores(client, name, start, start + count - 1)
+            if not window:
+                return
+            yield from window
+            if len(window) < count:
+                return
+            start += count

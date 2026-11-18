@@ -1,8 +1,15 @@
 """Synchronous Redis hash storage."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 
-from cacher.storage._redis import Redis, decode, swap_key
+from cacher.storage._redis import (
+    SCAN_COUNT,
+    Redis,
+    decode,
+    required_text,
+    scan_done,
+    swap_key,
+)
 from cacher.storage.key_value.storage import KeyValueStorage
 
 
@@ -51,3 +58,16 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
 
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)
+
+    def iter(
+        self, client: Redis, name: str, *, count: int = SCAN_COUNT
+    ) -> Iterator[tuple[str, str]]:
+        cursor: object = 0
+        while True:
+            cursor, raw = client.hscan(name, cursor=cursor, count=count)
+            if not isinstance(raw, dict):
+                raise TypeError(f"unexpected Redis hash scan type: {type(raw).__name__}")
+            for field, value in raw.items():
+                yield required_text(field), required_text(value)
+            if scan_done(cursor):
+                return

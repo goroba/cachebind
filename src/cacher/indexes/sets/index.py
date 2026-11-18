@@ -1,10 +1,13 @@
 """Synchronous set index."""
 
-from collections.abc import Hashable, Sequence
+from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import Self
 
 from cacher.indexes.sets.base import SetBase
+from cacher.serializers.serializer import Serializer
 from cacher.storage.sets.storage import SetStorage
+
+BATCH = 100
 
 
 class SetIndex[ClientType, MemberType, StorageType: Hashable](
@@ -48,3 +51,21 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
     def drop(self, client: ClientType) -> None:
         """Delete the key this index is bound to. A missing key is not an error."""
         self.storage.drop(client, self.key)
+
+    def iter(self, client: ClientType) -> Iterator[MemberType]:
+        """Yield each member stored under this index key."""
+        return values(self.storage.iter(client, self.key), self.serializer)
+
+
+def values[StorageType, ValueType](
+    raw: Iterable[StorageType], serializer: Serializer[ValueType, StorageType]
+) -> Iterator[ValueType]:
+    """Yield deserialized values, calling ``mdeserialize`` once per batch."""
+    batch: list[StorageType] = []
+    for value in raw:
+        batch.append(value)
+        if len(batch) == BATCH:
+            yield from serializer.mdeserialize(batch)
+            batch = []
+    if batch:
+        yield from serializer.mdeserialize(batch)

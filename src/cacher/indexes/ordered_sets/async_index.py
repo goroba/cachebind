@@ -1,10 +1,13 @@
 """Asynchronous ordered-set index."""
 
-from collections.abc import Hashable, Sequence
+from collections.abc import AsyncIterable, AsyncIterator, Hashable, Iterator, Sequence
 from typing import Self
 
 from cacher.indexes.ordered_sets.base import OrderedSetBase, _empty_range
+from cacher.serializers.serializer import Serializer
 from cacher.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
+
+BATCH = 100
 
 
 class AsyncOrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
@@ -98,3 +101,31 @@ class AsyncOrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
     async def drop(self, client: ClientType) -> None:
         """Delete the key this index is bound to. A missing key is not an error."""
         await self.storage.drop(client, self.key)
+
+    async def iter(self, client: ClientType) -> AsyncIterator[tuple[MemberType, float]]:
+        """Yield each member and score under this index key, lowest score first."""
+        async for pair in async_scored(self.storage.iter(client, self.key), self.serializer):
+            yield pair
+
+
+async def async_scored[StorageType, ValueType](
+    raw: AsyncIterable[tuple[StorageType, float]], serializer: Serializer[ValueType, StorageType]
+) -> AsyncIterator[tuple[ValueType, float]]:
+    """Yield deserialized members and their scores, one ``mdeserialize`` per batch."""
+    batch: list[tuple[StorageType, float]] = []
+    async for item in raw:
+        batch.append(item)
+        if len(batch) == BATCH:
+            for decoded in _scored(batch, serializer):
+                yield decoded
+            batch = []
+    if batch:
+        for decoded in _scored(batch, serializer):
+            yield decoded
+
+
+def _scored[StorageType, ValueType](
+    batch: list[tuple[StorageType, float]], serializer: Serializer[ValueType, StorageType]
+) -> Iterator[tuple[ValueType, float]]:
+    decoded = serializer.mdeserialize([member for member, _score in batch])
+    return zip(decoded, (score for _member, score in batch), strict=True)

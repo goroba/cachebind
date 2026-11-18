@@ -1,10 +1,13 @@
 """Asynchronous key-value index."""
 
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import AsyncIterable, AsyncIterator, Hashable, Iterator, Mapping, Sequence
 from typing import Self
 
 from cacher.indexes.key_value.base import KeyValueBase
+from cacher.serializers.serializer import Serializer
 from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
+
+BATCH = 100
 
 
 class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
@@ -71,3 +74,31 @@ class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
     async def drop(self, client: ClientType) -> None:
         """Delete the key this index is bound to. A missing key is not an error."""
         await self.storage.drop(client, self.key)
+
+    async def iter(self, client: ClientType) -> AsyncIterator[tuple[str, ModelType]]:
+        """Yield each stored id and model under this index key."""
+        async for pair in async_pairs(self.storage.iter(client, self.key), self.serializer):
+            yield pair
+
+
+async def async_pairs[StorageType, ValueType](
+    raw: AsyncIterable[tuple[str, StorageType]], serializer: Serializer[ValueType, StorageType]
+) -> AsyncIterator[tuple[str, ValueType]]:
+    """Yield stored ids and deserialized values, one ``mdeserialize`` per batch."""
+    batch: list[tuple[str, StorageType]] = []
+    async for item in raw:
+        batch.append(item)
+        if len(batch) == BATCH:
+            for decoded in _pairs(batch, serializer):
+                yield decoded
+            batch = []
+    if batch:
+        for decoded in _pairs(batch, serializer):
+            yield decoded
+
+
+def _pairs[StorageType, ValueType](
+    batch: list[tuple[str, StorageType]], serializer: Serializer[ValueType, StorageType]
+) -> Iterator[tuple[str, ValueType]]:
+    decoded = serializer.mdeserialize([value for _field, value in batch])
+    return zip((field for field, _value in batch), decoded, strict=True)
