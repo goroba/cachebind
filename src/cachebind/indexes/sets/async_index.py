@@ -3,6 +3,7 @@
 from collections.abc import AsyncIterable, AsyncIterator, Hashable, Sequence
 from typing import Self
 
+from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.sets.base import SetBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.sets.async_storage import AsyncSetStorage
@@ -20,29 +21,59 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
 
     storage: AsyncSetStorage[ClientType, StorageType]
 
-    async def add(self, client: ClientType, member: MemberType) -> None:
+    async def add(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> None:
         """Add ``member``. A member that is already present is not an error."""
-        await self.storage.add(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        await self.storage.add(client, self.key, serializer.serialize(member))
 
-    async def madd(self, client: ClientType, members: Sequence[MemberType]) -> None:
+    async def madd(
+        self,
+        client: ClientType,
+        members: Sequence[MemberType],
+        **kwargs,
+    ) -> None:
         """Add every member."""
         if not members:
             return
-        await self.storage.madd(client, self.key, self.serializer.mserialize(members))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        await self.storage.madd(client, self.key, serializer.mserialize(members))
 
-    async def remove(self, client: ClientType, member: MemberType) -> None:
+    async def remove(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> None:
         """Remove ``member``. A missing member is not an error."""
-        await self.storage.remove(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        await self.storage.remove(client, self.key, serializer.serialize(member))
 
-    async def mremove(self, client: ClientType, members: Sequence[MemberType]) -> None:
+    async def mremove(
+        self,
+        client: ClientType,
+        members: Sequence[MemberType],
+        **kwargs,
+    ) -> None:
         """Remove every member. Missing members are not an error."""
         if not members:
             return
-        await self.storage.mremove(client, self.key, self.serializer.mserialize(members))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        await self.storage.mremove(client, self.key, serializer.mserialize(members))
 
-    async def contains(self, client: ClientType, member: MemberType) -> bool:
+    async def contains(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> bool:
         """Return whether ``member`` is in the set."""
-        return await self.storage.contains(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return await self.storage.contains(client, self.key, serializer.serialize(member))
 
     async def swap(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
@@ -52,9 +83,14 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
         """Delete the key this index is bound to. A missing key is not an error."""
         await self.storage.drop(client, self.key)
 
-    async def iter(self, client: ClientType) -> AsyncIterator[MemberType]:
+    async def iter(
+        self,
+        client: ClientType,
+        **kwargs,
+    ) -> AsyncIterator[MemberType]:
         """Yield each member stored under this index key."""
-        async for member in async_values(self.storage.iter(client, self.key), self.serializer):
+        serializer = resolve_serializer(self.serializer, kwargs)
+        async for member in async_values(self.storage.iter(client, self.key), serializer):
             yield member
 
 

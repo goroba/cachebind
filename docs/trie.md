@@ -1,10 +1,10 @@
 # Trie
 
-Redis stores a trie named `cities`. Redis Search keeps that trie as one suggestion dictionary. Each suggestion string is a city name. Each score is that city's clicks. Each payload is the city id. Postgres stores the city rows. The index reaches Postgres only through the serializer.
+Redis stores a trie named `cities`. Redis Search keeps that trie as one suggestion dictionary. Each suggestion string is a city name. Each score is that city's clicks. Each payload is the city id. Postgres stores the city rows. The index reaches Postgres only through a serializer you pass on each call.
 
 `Serializer.serialize` and `Serializer.deserialize` are synchronous. This tutorial uses `build_trie_index` and a synchronous SQLAlchemy session.
 
-`add` and `madd` take a city name, a `City`, and a score. Those methods call `serialize` before they talk to Redis. Redis keeps the id string as the payload, under the key `cities`. `search` reads the payloads for a prefix and deserializes each one, so the cities come back from Postgres.
+`add` and `madd` take a city name, a `City`, and a score. Those methods call `serialize` on the serializer you pass before they talk to Redis. Redis keeps the id string as the payload, under the key `cities`. `search` reads the payloads for a prefix and deserializes each one with that serializer, so the cities come back from Postgres.
 
 ## Install
 
@@ -63,7 +63,9 @@ The snippets in this tutorial are one program, in this order.
 
 `CitySerializer` declares `Serializer[City, str]`. The builder checks that declaration. `member_type` must be `City`, and the Redis trie payload type is `str`.
 
-The index keeps one serializer for the process. `serialize` returns `str(value.id)`. `mserialize` returns those id strings in input order. `deserialize` opens a session, loads the row for the stored id, and returns that `City`. A missing row raises `ValueError`. `mdeserialize` loads every stored id with one query. The query does not keep input order, so that method puts each `City` back in that order. `expunge` detaches each loaded `City` so its attributes stay available after the session closes.
+`CitySerializer` takes one open `Session`. `serialize` returns `str(value.id)`. `mserialize` returns those id strings in input order. `deserialize` loads the row for the stored id and returns that `City`. A missing row raises `ValueError`. `mdeserialize` loads every stored id with one query. The query does not keep input order, so that method puts each `City` back in that order. `expunge` detaches each loaded `City` so its attributes stay available after the session closes.
+
+Pass `serializer=CitySerializer(session)` on every index call that serializes or deserializes while `session` is open.
 
 ```python
 from collections.abc import Sequence
@@ -74,31 +76,29 @@ from cachebind import Serializer
 
 
 class CitySerializer(Serializer[City, str]):
-    def __init__(self, sessions: sessionmaker[Session]) -> None:
-        self.sessions = sessions
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def serialize(self, value: City) -> str:
         return str(value.id)
 
     def deserialize(self, value: str) -> City:
         city_id = int(value)
-        with self.sessions() as session:
-            row = session.get(City, city_id)
-            if row is None:
-                raise ValueError(f"no city {city_id}")
-            session.expunge(row)
-            return row
+        row = self.session.get(City, city_id)
+        if row is None:
+            raise ValueError(f"no city {city_id}")
+        self.session.expunge(row)
+        return row
 
     def mserialize(self, values: Sequence[City]) -> list[str]:
         return [str(value.id) for value in values]
 
     def mdeserialize(self, values: Sequence[str]) -> list[City]:
         ids = [int(value) for value in values]
-        with self.sessions() as session:
-            rows = session.scalars(select(City).where(City.id.in_(ids))).all()
-            by_id = {row.id: row for row in rows}
-            for row in rows:
-                session.expunge(row)
+        rows = self.session.scalars(select(City).where(City.id.in_(ids))).all()
+        by_id = {row.id: row for row in rows}
+        for row in rows:
+            self.session.expunge(row)
         loaded: list[City] = []
         for city_id in ids:
             row = by_id.get(city_id)
@@ -110,18 +110,18 @@ class CitySerializer(Serializer[City, str]):
 
 ## Index
 
-Build the index once. A second build with the same key raises `ValueError`. Pass the Redis client into every call. The client is created with `decode_responses=True`, so suggestion strings and payloads come back as text.
+Build the index once with `NoopSerializer[City, str]()` as the default serializer on the registered class. That default does not talk to Postgres. A second build with the same key raises `ValueError`. Pass the Redis client into every call. The client is created with `decode_responses=True`, so suggestion strings and payloads come back as text.
 
 ```python
 from redis import Redis
 
-from cachebind import build_trie_index
+from cachebind import NoopSerializer, build_trie_index
 from cachebind.storage import RedisTrieStorage
 
 cities = build_trie_index(
     "cities",
     member_type=City,
-    serializer=CitySerializer(sessions),
+    serializer=NoopSerializer[City, str](),
     storage=RedisTrieStorage(),
 )
 
@@ -142,15 +142,21 @@ with sessions() as session:
     cities.madd(
         client,
         entries=[(row.name, row, float(row.clicks)) for row in rows],
+        serializer=CitySerializer(session),
     )
 ```
 
-`madd` runs while that session is open, so each row still has `name`, `id`, and `clicks`. It calls `mserialize` before it talks to Redis. Redis then holds five suggestions under `cities`: Paris at 900, Prague at 700, Padua at 200, Lyon at 400, and Lisbon at 300.
+`madd` runs while that session is open, so each row still has `name`, `id`, and `clicks`. It calls `mserialize` on `CitySerializer(session)` before it talks to Redis. Redis then holds five suggestions under `cities`: Paris at 900, Prague at 700, Padua at 200, Lyon at 400, and Lisbon at 300.
 
-`search` completes a prefix. The match is case-sensitive. `P` matches every stored name that starts with `P`: Paris, Prague, and Padua. Redis ranks a match by its score, and a shorter remainder after the prefix ranks higher than a longer one with the same score. With these click counts the order is Paris, Prague, Padua. `search` then calls `mdeserialize` on their payloads, so one query loads those three rows from Postgres.
+`search` completes a prefix. The match is case-sensitive. `P` matches every stored name that starts with `P`: Paris, Prague, and Padua. Redis ranks a match by its score, and a shorter remainder after the prefix ranks higher than a longer one with the same score. With these click counts the order is Paris, Prague, Padua. `search` then calls `mdeserialize` on their payloads through `CitySerializer(session)`, so one query loads those three rows from Postgres.
 
 ```python
-matches = cities.search(client, prefix="P")
+with sessions() as session:
+    matches = cities.search(
+        client,
+        prefix="P",
+        serializer=CitySerializer(session),
+    )
 ```
 
 `matches[0].name` is `"Paris"` and `matches[0].clicks` is `900`. Then Prague, then Padua.
@@ -158,7 +164,13 @@ matches = cities.search(client, prefix="P")
 `limit` caps the number of cities. The default is 10. Paris outranks Padua, so a limit of one on the prefix `Pa` returns Paris.
 
 ```python
-closer = cities.search(client, prefix="Pa", limit=1)
+with sessions() as session:
+    closer = cities.search(
+        client,
+        prefix="Pa",
+        limit=1,
+        serializer=CitySerializer(session),
+    )
 ```
 
 `closer[0].name` is `"Paris"`.
@@ -166,7 +178,12 @@ closer = cities.search(client, prefix="Pa", limit=1)
 `Parix` is not a prefix of any stored name, so a plain search is empty.
 
 ```python
-miss = cities.search(client, prefix="Parix")
+with sessions() as session:
+    miss = cities.search(
+        client,
+        prefix="Parix",
+        serializer=CitySerializer(session),
+    )
 ```
 
 `miss` is `[]`.
@@ -174,7 +191,13 @@ miss = cities.search(client, prefix="Parix")
 `fuzzy=True` also accepts a prefix one edit away from the stored name. `Parix` is one substitution away from `Paris`.
 
 ```python
-fuzzy = cities.search(client, prefix="Parix", fuzzy=True)
+with sessions() as session:
+    fuzzy = cities.search(
+        client,
+        prefix="Parix",
+        fuzzy=True,
+        serializer=CitySerializer(session),
+    )
 ```
 
 `fuzzy[0].name` is `"Paris"`. A prefix shorter than three characters with `fuzzy=True` can scan the whole trie.
@@ -196,5 +219,12 @@ cities.remove(client, string="Lyon")
 `cities.length(client)` is `4` after that. Calling `add` again for Lyon puts it back. `increment=True` adds the given score to the stored score and still replaces the payload.
 
 ```python
-cities.add(client, string=lyon.name, member=lyon, score=float(lyon.clicks))
+with sessions() as session:
+    cities.add(
+        client,
+        string=lyon.name,
+        member=lyon,
+        score=float(lyon.clicks),
+        serializer=CitySerializer(session),
+    )
 ```

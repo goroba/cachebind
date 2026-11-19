@@ -69,12 +69,12 @@ def test_str_round_trip() -> None:
 
 
 def test_noop_round_trip() -> None:
-    serializer = NoopSerializer[int]()
+    serializer = NoopSerializer[int, int]()
     values = [0, -42, 15]
     assert serializer.mserialize(values) == values
     assert serializer.mdeserialize(values) == values
 
-    text = NoopSerializer[str]()
+    text = NoopSerializer[str, str]()
     assert text.deserialize(text.serialize("café")) == "café"
 
 

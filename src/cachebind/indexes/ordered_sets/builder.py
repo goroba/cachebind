@@ -10,6 +10,7 @@ from cachebind.indexes._builder import (
     index_class,
     instance_class,
     protocol_args,
+    serializer_class,
     serializer_types,
     storage_client_type,
 )
@@ -93,8 +94,8 @@ def _build(
     other: type[OrderedSetStorage[Any, Any]] | type[AsyncOrderedSetStorage[Any, Any]],
 ) -> Any:
     check_key(key)
-    serializer_cls = instance_class(key, serializer, label="serializer")
-    value_type, serializer_storage = serializer_types(key, serializer_cls)
+    instance_class(key, serializer, label="serializer")
+    value_type, serializer_storage = serializer_types(key, serializer_class(serializer))
     check_value_type(key, member_type, value_type, label="member type")
     storage_cls = instance_class(key, storage, label="storage")
     storage_type = _storage_type(key, storage_cls, protocol, other)

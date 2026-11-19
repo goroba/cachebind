@@ -3,6 +3,7 @@
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import Self
 
+from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.ordered_sets.base import OrderedSetBase, _empty_range
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.ordered_sets.storage import OrderedSetStorage
@@ -20,76 +21,149 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
 
     storage: OrderedSetStorage[ClientType, StorageType]
 
-    def add(self, client: ClientType, member: MemberType, score: float) -> None:
+    def add(
+        self,
+        client: ClientType,
+        member: MemberType,
+        score: float,
+        **kwargs,
+    ) -> None:
         """Add ``member`` with ``score``. A member that is already present gets the new score."""
-        self.storage.add(client, self.key, self.serializer.serialize(member), score)
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.add(client, self.key, serializer.serialize(member), score)
 
-    def madd(self, client: ClientType, members: Sequence[tuple[MemberType, float]]) -> None:
+    def madd(
+        self,
+        client: ClientType,
+        members: Sequence[tuple[MemberType, float]],
+        **kwargs,
+    ) -> None:
         """Add every member with its score. A repeated member keeps the last score."""
         if not members:
             return
-        serialized = self.serializer.mserialize([member for member, _score in members])
+        serializer = resolve_serializer(self.serializer, kwargs)
+        serialized = serializer.mserialize([member for member, _score in members])
         scores = (score for _member, score in members)
         self.storage.madd(client, self.key, list(zip(serialized, scores, strict=True)))
 
-    def remove(self, client: ClientType, member: MemberType) -> None:
+    def remove(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> None:
         """Remove ``member``. A missing member is not an error."""
-        self.storage.remove(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.remove(client, self.key, serializer.serialize(member))
 
-    def mremove(self, client: ClientType, members: Sequence[MemberType]) -> None:
+    def mremove(
+        self,
+        client: ClientType,
+        members: Sequence[MemberType],
+        **kwargs,
+    ) -> None:
         """Remove every member. Missing members are not an error."""
         if not members:
             return
-        self.storage.mremove(client, self.key, self.serializer.mserialize(members))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.mremove(client, self.key, serializer.mserialize(members))
 
-    def contains(self, client: ClientType, member: MemberType) -> bool:
+    def contains(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> bool:
         """Return whether ``member`` is in the ordered set."""
-        return self.storage.contains(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return self.storage.contains(client, self.key, serializer.serialize(member))
 
-    def score(self, client: ClientType, member: MemberType) -> float | None:
+    def score(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> float | None:
         """Return the score of ``member``, or ``None`` when it is missing."""
-        return self.storage.score(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return self.storage.score(client, self.key, serializer.serialize(member))
 
-    def rank(self, client: ClientType, member: MemberType) -> int | None:
+    def rank(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> int | None:
         """Return the 0-based ascending rank of ``member``, or ``None`` when it is missing."""
-        return self.storage.rank(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return self.storage.rank(client, self.key, serializer.serialize(member))
 
-    def range(self, client: ClientType, start: int, stop: int) -> list[MemberType]:
+    def range(
+        self,
+        client: ClientType,
+        start: int,
+        stop: int,
+        **kwargs,
+    ) -> list[MemberType]:
         """Return members from ``start`` through ``stop``, both inclusive."""
         if _empty_range(start, stop):
             return []
+        serializer = resolve_serializer(self.serializer, kwargs)
         raw = self.storage.range(client, self.key, start, stop)
-        return self.serializer.mdeserialize(raw)
+        return serializer.mdeserialize(raw)
 
     def range_with_scores(
-        self, client: ClientType, start: int, stop: int
+        self,
+        client: ClientType,
+        start: int,
+        stop: int,
+        **kwargs,
     ) -> list[tuple[MemberType, float]]:
         """Return members and scores from ``start`` through ``stop``, both inclusive."""
         if _empty_range(start, stop):
             return []
+        serializer = resolve_serializer(self.serializer, kwargs)
         raw = self.storage.range_with_scores(client, self.key, start, stop)
-        members = self.serializer.mdeserialize([member for member, _score in raw])
+        members = serializer.mdeserialize([member for member, _score in raw])
         return list(zip(members, (score for _member, score in raw), strict=True))
 
-    def rev_rank(self, client: ClientType, member: MemberType) -> int | None:
+    def rev_rank(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> int | None:
         """Return the 0-based descending rank of ``member``, or ``None`` when it is missing."""
-        return self.storage.rev_rank(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return self.storage.rev_rank(client, self.key, serializer.serialize(member))
 
-    def rev_range(self, client: ClientType, start: int, stop: int) -> list[MemberType]:
+    def rev_range(
+        self,
+        client: ClientType,
+        start: int,
+        stop: int,
+        **kwargs,
+    ) -> list[MemberType]:
         """Return members from ``start`` through ``stop``, both inclusive, highest score first."""
         if _empty_range(start, stop):
             return []
+        serializer = resolve_serializer(self.serializer, kwargs)
         raw = self.storage.rev_range(client, self.key, start, stop)
-        return self.serializer.mdeserialize(raw)
+        return serializer.mdeserialize(raw)
 
     def rev_range_with_scores(
-        self, client: ClientType, start: int, stop: int
+        self,
+        client: ClientType,
+        start: int,
+        stop: int,
+        **kwargs,
     ) -> list[tuple[MemberType, float]]:
         """Return members and scores from ``start`` through ``stop``, highest score first."""
         if _empty_range(start, stop):
             return []
+        serializer = resolve_serializer(self.serializer, kwargs)
         raw = self.storage.rev_range_with_scores(client, self.key, start, stop)
-        members = self.serializer.mdeserialize([member for member, _score in raw])
+        members = serializer.mdeserialize([member for member, _score in raw])
         return list(zip(members, (score for _member, score in raw), strict=True))
 
     def swap(self, client: ClientType) -> Self:
@@ -100,9 +174,14 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         """Delete the key this index is bound to. A missing key is not an error."""
         self.storage.drop(client, self.key)
 
-    def iter(self, client: ClientType) -> Iterator[tuple[MemberType, float]]:
+    def iter(
+        self,
+        client: ClientType,
+        **kwargs,
+    ) -> Iterator[tuple[MemberType, float]]:
         """Yield each member and score under this index key, lowest score first."""
-        return scored(self.storage.iter(client, self.key), self.serializer)
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return scored(self.storage.iter(client, self.key), serializer)
 
 
 def scored[StorageType, ValueType](

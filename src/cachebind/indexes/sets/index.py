@@ -3,6 +3,7 @@
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import Self
 
+from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.sets.base import SetBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.sets.storage import SetStorage
@@ -20,29 +21,59 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
 
     storage: SetStorage[ClientType, StorageType]
 
-    def add(self, client: ClientType, member: MemberType) -> None:
+    def add(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> None:
         """Add ``member``. A member that is already present is not an error."""
-        self.storage.add(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.add(client, self.key, serializer.serialize(member))
 
-    def madd(self, client: ClientType, members: Sequence[MemberType]) -> None:
+    def madd(
+        self,
+        client: ClientType,
+        members: Sequence[MemberType],
+        **kwargs,
+    ) -> None:
         """Add every member."""
         if not members:
             return
-        self.storage.madd(client, self.key, self.serializer.mserialize(members))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.madd(client, self.key, serializer.mserialize(members))
 
-    def remove(self, client: ClientType, member: MemberType) -> None:
+    def remove(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> None:
         """Remove ``member``. A missing member is not an error."""
-        self.storage.remove(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.remove(client, self.key, serializer.serialize(member))
 
-    def mremove(self, client: ClientType, members: Sequence[MemberType]) -> None:
+    def mremove(
+        self,
+        client: ClientType,
+        members: Sequence[MemberType],
+        **kwargs,
+    ) -> None:
         """Remove every member. Missing members are not an error."""
         if not members:
             return
-        self.storage.mremove(client, self.key, self.serializer.mserialize(members))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.mremove(client, self.key, serializer.mserialize(members))
 
-    def contains(self, client: ClientType, member: MemberType) -> bool:
+    def contains(
+        self,
+        client: ClientType,
+        member: MemberType,
+        **kwargs,
+    ) -> bool:
         """Return whether ``member`` is in the set."""
-        return self.storage.contains(client, self.key, self.serializer.serialize(member))
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return self.storage.contains(client, self.key, serializer.serialize(member))
 
     def swap(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
@@ -52,9 +83,14 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         """Delete the key this index is bound to. A missing key is not an error."""
         self.storage.drop(client, self.key)
 
-    def iter(self, client: ClientType) -> Iterator[MemberType]:
+    def iter(
+        self,
+        client: ClientType,
+        **kwargs,
+    ) -> Iterator[MemberType]:
         """Yield each member stored under this index key."""
-        return values(self.storage.iter(client, self.key), self.serializer)
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return values(self.storage.iter(client, self.key), serializer)
 
 
 def values[StorageType, ValueType](

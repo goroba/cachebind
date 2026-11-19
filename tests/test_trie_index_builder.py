@@ -247,6 +247,23 @@ def test_trie_builders_are_public() -> None:
     assert cachebind.build_async_trie_index is build_async_trie_index
 
 
+def test_trie_search_uses_serializer_kwarg() -> None:
+    storage = MemoryTrie()
+    default = CountingSerializer()
+    override = CountingSerializer()
+    index = build_trie_index(
+        "trie_serializer_kwarg",
+        member_type=int,
+        serializer=default,
+        storage=storage,
+    )
+    client = Spy()
+    index.add(client, "Paris", 1, 900.0)
+    assert index.search(client, "P", serializer=override) == [1]
+    assert override.batches == 1
+    assert default.batches == 0
+
+
 def test_sync_trie_index_round_trip() -> None:
     storage = MemoryTrie()
     serializer = CountingSerializer()

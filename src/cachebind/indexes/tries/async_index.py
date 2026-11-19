@@ -3,6 +3,7 @@
 from collections.abc import Hashable, Sequence
 from typing import Self
 
+from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.tries.base import TrieBase
 from cachebind.storage.tries._values import check_limit
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
@@ -27,18 +28,20 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
         score: float,
         *,
         increment: bool = False,
+        **kwargs,
     ) -> None:
         """Add ``string`` with ``score`` and ``member`` as its payload.
 
         A string that is already present gets the new score and payload.
         ``increment=True`` adds ``score`` to the stored score instead of replacing it.
         """
+        serializer = resolve_serializer(self.serializer, kwargs)
         await self.storage.add(
             client,
             self.key,
             string,
             score,
-            self.serializer.serialize(member),
+            serializer.serialize(member),
             increment=increment,
         )
 
@@ -48,11 +51,13 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
         entries: Sequence[tuple[str, MemberType, float]],
         *,
         increment: bool = False,
+        **kwargs,
     ) -> None:
         """Add every suggestion. A repeated string keeps the last score and payload."""
         if not entries:
             return
-        serialized = self.serializer.mserialize([member for _string, member, _score in entries])
+        serializer = resolve_serializer(self.serializer, kwargs)
+        serialized = serializer.mserialize([member for _string, member, _score in entries])
         stored = [
             (string, score, payload)
             for (string, _member, score), payload in zip(entries, serialized, strict=True)
@@ -76,6 +81,7 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
         *,
         fuzzy: bool = False,
         limit: int = 10,
+        **kwargs,
     ) -> list[MemberType]:
         """Return members whose suggestion string matches ``prefix``, in rank order.
 
@@ -83,8 +89,9 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
         Members are deserialized from the stored payloads.
         """
         check_limit(limit)
+        serializer = resolve_serializer(self.serializer, kwargs)
         raw = await self.storage.search(client, self.key, prefix, fuzzy=fuzzy, limit=limit)
-        return self.serializer.mdeserialize(raw)
+        return serializer.mdeserialize(raw)
 
     async def length(self, client: ClientType) -> int:
         """Return the number of suggestion strings in the trie."""

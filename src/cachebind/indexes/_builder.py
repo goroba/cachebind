@@ -18,7 +18,19 @@ def instance_class(key: str, value: Any, *, label: str) -> type:
     return type(value)
 
 
+def serializer_class(serializer: Any) -> type:
+    if isinstance(serializer, type):
+        return serializer
+    orig = getattr(serializer, "__orig_class__", None)
+    if orig is not None:
+        return orig
+    return type(serializer)
+
+
 def serializer_types(key: str, serializer: Any) -> tuple[Any, Any]:
+    alias_args = get_args(serializer)
+    if alias_args and len(alias_args) == 2:
+        return alias_args
     if not isinstance(serializer, type):
         raise TypeError(
             f"index {key!r}: serializer must be a class, got {type(serializer).__name__}"

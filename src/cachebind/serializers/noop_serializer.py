@@ -1,13 +1,19 @@
 """No-op serializer."""
 
+from typing import cast
+
 from cachebind.serializers.serializer import Serializer
 
 
-class NoopSerializer[ValueType](Serializer[ValueType, ValueType]):
-    """Identity serializer when the storage value is already the model value."""
+class NoopSerializer[ValueType, StorageType](Serializer[ValueType, StorageType]):
+    """Identity when value and storage types match.
 
-    def serialize(self, value: ValueType) -> ValueType:
-        return value
+    When they differ, this instance is only a build-time placeholder. Pass
+    ``serializer=`` on index calls that serialize or deserialize.
+    """
 
-    def deserialize(self, value: ValueType) -> ValueType:
-        return value
+    def serialize(self, value: ValueType) -> StorageType:
+        return cast(StorageType, value)
+
+    def deserialize(self, value: StorageType) -> ValueType:
+        return cast(ValueType, value)

@@ -3,6 +3,7 @@
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import Self
 
+from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.key_value.base import KeyValueBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.key_value.storage import KeyValueStorage
@@ -20,18 +21,31 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
 
     storage: KeyValueStorage[ClientType, str, StorageType]
 
-    def get(self, client: ClientType, id: IdType) -> ModelType | None:
+    def get(
+        self,
+        client: ClientType,
+        id: IdType,
+        **kwargs,
+    ) -> ModelType | None:
         """Return the cached model, or ``None`` when the id is missing."""
+        serializer = resolve_serializer(self.serializer, kwargs)
         raw = self.storage.get(client, self.key, str(id))
         if raw is None:
             return None
-        return self.serializer.deserialize(raw)
+        return serializer.deserialize(raw)
 
     def set(
-        self, client: ClientType, id: IdType, value: ModelType, *, ttl: int | None = None
+        self,
+        client: ClientType,
+        id: IdType,
+        value: ModelType,
+        *,
+        ttl: int | None = None,
+        **kwargs,
     ) -> None:
         """Store ``value`` under ``id``."""
-        self.storage.set(client, self.key, str(id), self.serializer.serialize(value), ttl=ttl)
+        serializer = resolve_serializer(self.serializer, kwargs)
+        self.storage.set(client, self.key, str(id), serializer.serialize(value), ttl=ttl)
 
     def delete(self, client: ClientType, id: IdType) -> None:
         """Remove ``id``. A missing id is not an error."""
@@ -47,23 +61,35 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         """Return whether ``id`` is present."""
         return self.storage.exists(client, self.key, str(id))
 
-    def mget(self, client: ClientType, ids: Sequence[IdType]) -> list[ModelType | None]:
+    def mget(
+        self,
+        client: ClientType,
+        ids: Sequence[IdType],
+        **kwargs,
+    ) -> list[ModelType | None]:
         """Return models in input order. Missing ids are ``None``."""
         if not ids:
             return []
+        serializer = resolve_serializer(self.serializer, kwargs)
         raw_values = self.storage.mget(client, self.key, [str(id) for id in ids])
         present = [raw for raw in raw_values if raw is not None]
-        decoded = iter(self.serializer.mdeserialize(present))
+        decoded = iter(serializer.mdeserialize(present))
         return [None if raw is None else next(decoded) for raw in raw_values]
 
     def mset(
-        self, client: ClientType, items: Mapping[IdType, ModelType], *, ttl: int | None = None
+        self,
+        client: ClientType,
+        items: Mapping[IdType, ModelType],
+        *,
+        ttl: int | None = None,
+        **kwargs,
     ) -> None:
         """Store every item. ``ttl`` applies to each id."""
         if not items:
             return
+        serializer = resolve_serializer(self.serializer, kwargs)
         fields = [str(id) for id in items]
-        values = self.serializer.mserialize(list(items.values()))
+        values = serializer.mserialize(list(items.values()))
         mapping = dict(zip(fields, values, strict=True))
         self.storage.mset(client, self.key, mapping, ttl=ttl)
 
@@ -75,9 +101,14 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         """Delete the key this index is bound to. A missing key is not an error."""
         self.storage.drop(client, self.key)
 
-    def iter(self, client: ClientType) -> Iterator[tuple[str, ModelType]]:
+    def iter(
+        self,
+        client: ClientType,
+        **kwargs,
+    ) -> Iterator[tuple[str, ModelType]]:
         """Yield each stored id and model under this index key."""
-        return pairs(self.storage.iter(client, self.key), self.serializer)
+        serializer = resolve_serializer(self.serializer, kwargs)
+        return pairs(self.storage.iter(client, self.key), serializer)
 
 
 def pairs[StorageType, ValueType](

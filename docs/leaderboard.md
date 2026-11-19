@@ -1,10 +1,10 @@
 # Leaderboard
 
-Redis stores an ordered set named `leaderboard`. Each member is a user id. Each score is a float. Postgres stores the user rows. The index reaches Postgres only through the serializer.
+Redis stores an ordered set named `leaderboard`. Each member is a user id. Each score is a float. Postgres stores the user rows. The index reaches Postgres only through a serializer you pass on each call.
 
 `Serializer.serialize` and `Serializer.deserialize` are synchronous. This tutorial uses `build_ordered_set_index` and a synchronous SQLAlchemy session.
 
-`add`, `rank`, `score`, and `remove` take a `User`. Those methods call `serialize` before they talk to Redis. Redis keeps the id string, under the key `leaderboard`.
+`add`, `rank`, `score`, and `remove` take a `User`. Those methods call `serialize` on the serializer you pass before they talk to Redis. Redis keeps the id string, under the key `leaderboard`.
 
 ## Install
 
@@ -65,7 +65,9 @@ The snippets in this tutorial are one program, in this order.
 
 `UserSerializer` declares `Serializer[User, str]`. The builder checks that declaration. `member_type` must be `User`, and the Redis storage member type is `str`.
 
-The index keeps one serializer for the process. `serialize` returns `str(value.id)`. `mserialize` returns those id strings in input order. `deserialize` opens a session, loads the row for the stored UUID, and returns that `User`. A missing row raises `ValueError`. `mdeserialize` loads every stored id with one query. The query does not keep input order, so that method puts each `User` back in that order. `expunge` detaches each loaded `User` so its attributes stay available after the session closes.
+`UserSerializer` takes one open `Session`. `serialize` returns `str(value.id)`. `mserialize` returns those id strings in input order. `deserialize` loads the row for the stored UUID and returns that `User`. A missing row raises `ValueError`. `mdeserialize` loads every stored id with one query. The query does not keep input order, so that method puts each `User` back in that order. `expunge` detaches each loaded `User` so its attributes stay available after the session closes.
+
+Pass `serializer=UserSerializer(session)` on every index call that serializes or deserializes while `session` is open.
 
 ```python
 from collections.abc import Sequence
@@ -76,31 +78,29 @@ from cachebind import Serializer
 
 
 class UserSerializer(Serializer[User, str]):
-    def __init__(self, sessions: sessionmaker[Session]) -> None:
-        self.sessions = sessions
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def serialize(self, value: User) -> str:
         return str(value.id)
 
     def deserialize(self, value: str) -> User:
         user_id = uuid.UUID(value)
-        with self.sessions() as session:
-            row = session.get(User, user_id)
-            if row is None:
-                raise ValueError(f"no user {user_id}")
-            session.expunge(row)
-            return row
+        row = self.session.get(User, user_id)
+        if row is None:
+            raise ValueError(f"no user {user_id}")
+        self.session.expunge(row)
+        return row
 
     def mserialize(self, values: Sequence[User]) -> list[str]:
         return [str(value.id) for value in values]
 
     def mdeserialize(self, values: Sequence[str]) -> list[User]:
         ids = [uuid.UUID(value) for value in values]
-        with self.sessions() as session:
-            rows = session.scalars(select(User).where(User.id.in_(ids))).all()
-            by_id = {row.id: row for row in rows}
-            for row in rows:
-                session.expunge(row)
+        rows = self.session.scalars(select(User).where(User.id.in_(ids))).all()
+        by_id = {row.id: row for row in rows}
+        for row in rows:
+            self.session.expunge(row)
         loaded: list[User] = []
         for user_id in ids:
             row = by_id.get(user_id)
@@ -112,18 +112,18 @@ class UserSerializer(Serializer[User, str]):
 
 ## Index
 
-Build the index once. A second build with the same key raises `ValueError`. Pass the Redis client into every call.
+Build the index once with `NoopSerializer[User, str]()` as the default serializer on the registered class. That default does not talk to Postgres. A second build with the same key raises `ValueError`. Pass the Redis client into every call.
 
 ```python
 from redis import Redis
 
-from cachebind import build_ordered_set_index
+from cachebind import NoopSerializer, build_ordered_set_index
 from cachebind.storage import RedisOrderedSetStorage
 
 leaderboard = build_ordered_set_index(
     "leaderboard",
     member_type=User,
-    serializer=UserSerializer(sessions),
+    serializer=NoopSerializer[User, str](),
     storage=RedisOrderedSetStorage(),
 )
 
@@ -135,12 +135,14 @@ client = Redis(decode_responses=True)
 `add` stores the user id with a score. Calling `add` again for the same user replaces the score.
 
 ```python
-leaderboard.add(client, maya, 900.0)
-leaderboard.add(client, ada, 1500.0)
-leaderboard.add(client, ada, 1800.0)
-leaderboard.add(client, omar, 2100.0)
-leaderboard.add(client, grace, 2200.0)
-leaderboard.add(client, lin, 2500.0)
+with sessions() as session:
+    user_serializer = UserSerializer(session)
+    leaderboard.add(client, member=maya, score=900.0, serializer=user_serializer)
+    leaderboard.add(client, member=ada, score=1500.0, serializer=user_serializer)
+    leaderboard.add(client, member=ada, score=1800.0, serializer=user_serializer)
+    leaderboard.add(client, member=omar, score=2100.0, serializer=user_serializer)
+    leaderboard.add(client, member=grace, score=2200.0, serializer=user_serializer)
+    leaderboard.add(client, member=lin, score=2500.0, serializer=user_serializer)
 ```
 
 From the lowest score to the highest, the board is Maya, Ada, Omar, Grace, Lin. `rank` counts that way, starting at `0`.
@@ -148,7 +150,13 @@ From the lowest score to the highest, the board is Maya, Ada, Omar, Grace, Lin. 
 `rev_range_with_scores` counts from the highest score. Both ends are inclusive. The first three most rated users are indexes `0` through `2`. That call uses `mdeserialize`, so one query loads Lin, Grace, and Omar from Postgres.
 
 ```python
-top = leaderboard.rev_range_with_scores(client, 0, 2)
+with sessions() as session:
+    top = leaderboard.rev_range_with_scores(
+        client,
+        start=0,
+        stop=2,
+        serializer=UserSerializer(session),
+    )
 ```
 
 `top` is `[(lin, 2500.0), (grace, 2200.0), (omar, 2100.0)]`.
@@ -156,8 +164,10 @@ top = leaderboard.rev_range_with_scores(client, 0, 2)
 `rev_rank` counts from the highest score, starting at `0`.
 
 ```python
-place = leaderboard.rev_rank(client, lin)
-points = leaderboard.score(client, lin)
+with sessions() as session:
+    user_serializer = UserSerializer(session)
+    place = leaderboard.rev_rank(client, lin, serializer=user_serializer)
+    points = leaderboard.score(client, lin, serializer=user_serializer)
 ```
 
 Lin's `rev_rank` is `0` and the score is `2500.0`. Grace is `1`. Maya is `4`. A missing user returns `None`.
@@ -165,5 +175,6 @@ Lin's `rev_rank` is `0` and the score is `2500.0`. Grace is `1`. Maya is `4`. A 
 `remove` drops one member. A missing member is not an error. Ordered sets have no TTL.
 
 ```python
-leaderboard.remove(client, ada)
+with sessions() as session:
+    leaderboard.remove(client, ada, serializer=UserSerializer(session))
 ```
