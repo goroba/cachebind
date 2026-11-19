@@ -10,6 +10,7 @@ from cachebind import (
     DictSerializer,
     FloatSerializer,
     IntSerializer,
+    NoopSerializer,
     StrSerializer,
 )
 
@@ -65,6 +66,16 @@ def test_str_round_trip() -> None:
     assert serializer.serialize("") == ""
     assert serializer.deserialize("") == ""
     assert serializer.deserialize(serializer.serialize("café")) == "café"
+
+
+def test_noop_round_trip() -> None:
+    serializer = NoopSerializer[int]()
+    values = [0, -42, 15]
+    assert serializer.mserialize(values) == values
+    assert serializer.mdeserialize(values) == values
+
+    text = NoopSerializer[str]()
+    assert text.deserialize(text.serialize("café")) == "café"
 
 
 def test_bool_round_trip() -> None:

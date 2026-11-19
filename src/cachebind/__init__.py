@@ -34,6 +34,7 @@ from cachebind.serializers import (
     DictSerializer,
     FloatSerializer,
     IntSerializer,
+    NoopSerializer,
     Serializer,
     StrSerializer,
 )
@@ -70,6 +71,7 @@ __all__ = [
     "Index",
     "IndexRegistry",
     "IntSerializer",
+    "NoopSerializer",
     "KeyValueBase",
     "KeyValueIndex",
     "KeyValueStorage",

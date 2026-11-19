@@ -10,6 +10,7 @@ from cachebind.serializers.datetime_serializer import DatetimeSerializer
 from cachebind.serializers.dict_serializer import DictSerializer
 from cachebind.serializers.float_serializer import FloatSerializer
 from cachebind.serializers.int_serializer import IntSerializer
+from cachebind.serializers.noop_serializer import NoopSerializer
 from cachebind.serializers.serializer import Serializer
 from cachebind.serializers.str_serializer import StrSerializer
 
@@ -20,6 +21,7 @@ __all__ = [
     "DictSerializer",
     "FloatSerializer",
     "IntSerializer",
+    "NoopSerializer",
     "Serializer",
     "StrSerializer",
 ]
