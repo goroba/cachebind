@@ -3,7 +3,7 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from cacher import (
+from cachebind import (
     BoolSerializer,
     DataclassSerializer,
     DatetimeSerializer,

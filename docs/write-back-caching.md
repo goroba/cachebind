@@ -14,8 +14,8 @@ Build the index once. The user id is a `UUID`. The value is a `datetime`. The st
 from datetime import datetime
 from uuid import UUID
 
-from cacher import DatetimeSerializer, build_async_key_value_index
-from cacher.storage import AsyncRedisHashStorage
+from cachebind import DatetimeSerializer, build_async_key_value_index
+from cachebind.storage import AsyncRedisHashStorage
 
 last_visits = build_async_key_value_index(
     "last_visits",

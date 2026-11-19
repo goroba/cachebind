@@ -1,6 +1,6 @@
 import pytest
 
-from cacher.breadcrumbs import ColonBreadcrumbs
+from cachebind.breadcrumbs import ColonBreadcrumbs
 
 
 def test_colon_round_trip() -> None:

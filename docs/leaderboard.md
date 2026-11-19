@@ -9,17 +9,17 @@ Redis stores an ordered set named `leaderboard`. Each member is a user id. Each 
 ## Install
 
 ```bash
-pip install "cacher[redis]" "sqlalchemy>=2" "psycopg[binary]"
+pip install "cachebind[redis]" "sqlalchemy>=2" "psycopg[binary]"
 ```
 
 Postgres and Redis for a local run:
 
 ```bash
-docker run --name cacher-postgres -e POSTGRES_PASSWORD=cacher -e POSTGRES_DB=cacher -p 5432:5432 -d postgres:16
-docker run --name cacher-redis -p 6379:6379 -d redis:7
+docker run --name cachebind-postgres -e POSTGRES_PASSWORD=cachebind -e POSTGRES_DB=cachebind -p 5432:5432 -d postgres:16
+docker run --name cachebind-redis -p 6379:6379 -d redis:7
 ```
 
-The database URL is `postgresql+psycopg://postgres:cacher@localhost:5432/cacher`.
+The database URL is `postgresql+psycopg://postgres:cachebind@localhost:5432/cachebind`.
 
 ## Users
 
@@ -43,7 +43,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String)
 
 
-engine = create_engine("postgresql+psycopg://postgres:cacher@localhost:5432/cacher")
+engine = create_engine("postgresql+psycopg://postgres:cachebind@localhost:5432/cachebind")
 sessions = sessionmaker(bind=engine, expire_on_commit=False)
 Base.metadata.create_all(engine)
 
@@ -72,7 +72,7 @@ from collections.abc import Sequence
 
 from sqlalchemy import select
 
-from cacher import Serializer
+from cachebind import Serializer
 
 
 class UserSerializer(Serializer[User, str]):
@@ -117,8 +117,8 @@ Build the index once. A second build with the same key raises `ValueError`. Pass
 ```python
 from redis import Redis
 
-from cacher import build_ordered_set_index
-from cacher.storage import RedisOrderedSetStorage
+from cachebind import build_ordered_set_index
+from cachebind.storage import RedisOrderedSetStorage
 
 leaderboard = build_ordered_set_index(
     "leaderboard",

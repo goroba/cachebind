@@ -6,7 +6,7 @@ import pytest
 from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
 
-from cacher import (
+from cachebind import (
     AsyncSetIndex,
     IntSerializer,
     SetIndex,
@@ -16,13 +16,13 @@ from cacher import (
     build_set_index,
     get_registry,
 )
-from cacher.serializers.datetime_serializer import DatetimeSerializer
-from cacher.storage.key_value.async_redis_string_storage import AsyncRedisStringStorage
-from cacher.storage.key_value.redis_string_storage import RedisStringStorage
-from cacher.storage.sets.async_redis_set_storage import AsyncRedisSetStorage
-from cacher.storage.sets.async_storage import AsyncSetStorage
-from cacher.storage.sets.redis_set_storage import RedisSetStorage
-from cacher.storage.sets.storage import SetStorage
+from cachebind.serializers.datetime_serializer import DatetimeSerializer
+from cachebind.storage.key_value.async_redis_string_storage import AsyncRedisStringStorage
+from cachebind.storage.key_value.redis_string_storage import RedisStringStorage
+from cachebind.storage.sets.async_redis_set_storage import AsyncRedisSetStorage
+from cachebind.storage.sets.async_storage import AsyncSetStorage
+from cachebind.storage.sets.redis_set_storage import RedisSetStorage
+from cachebind.storage.sets.storage import SetStorage
 
 
 class Spy:
@@ -60,10 +60,10 @@ class BytesSet(SetStorage[Spy, bytes]):
 
 
 def test_set_builders_are_public() -> None:
-    import cacher
+    import cachebind
 
-    assert cacher.build_set_index is build_set_index
-    assert cacher.build_async_set_index is build_async_set_index
+    assert cachebind.build_set_index is build_set_index
+    assert cachebind.build_async_set_index is build_async_set_index
 
 
 def test_sync_set_index_round_trip() -> None:

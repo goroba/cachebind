@@ -2,9 +2,9 @@ import asyncio
 
 import fakeredis
 
-from cacher.storage import AsyncRedisOrderedSetStorage, RedisOrderedSetStorage
-from cacher.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
-from cacher.storage.ordered_sets.storage import OrderedSetStorage
+from cachebind.storage import AsyncRedisOrderedSetStorage, RedisOrderedSetStorage
+from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
+from cachebind.storage.ordered_sets.storage import OrderedSetStorage
 
 
 class _OrderedSetSpy:

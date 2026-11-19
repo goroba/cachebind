@@ -4,9 +4,9 @@ from collections.abc import Sequence
 import fakeredis
 import pytest
 
-from cacher.storage import AsyncRedisStringStorage, RedisStringStorage
-from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
-from cacher.storage.key_value.storage import KeyValueStorage
+from cachebind.storage import AsyncRedisStringStorage, RedisStringStorage
+from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
+from cachebind.storage.key_value.storage import KeyValueStorage
 
 _NAME = "users"
 

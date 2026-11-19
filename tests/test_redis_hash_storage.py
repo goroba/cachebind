@@ -3,10 +3,10 @@ from collections.abc import Sequence
 
 import fakeredis
 
-from cacher.storage.key_value.async_redis_hash_storage import AsyncRedisHashStorage
-from cacher.storage.key_value.async_storage import AsyncKeyValueStorage
-from cacher.storage.key_value.redis_hash_storage import RedisHashStorage
-from cacher.storage.key_value.storage import KeyValueStorage
+from cachebind.storage.key_value.async_redis_hash_storage import AsyncRedisHashStorage
+from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
+from cachebind.storage.key_value.redis_hash_storage import RedisHashStorage
+from cachebind.storage.key_value.storage import KeyValueStorage
 
 
 class _HashSpy:

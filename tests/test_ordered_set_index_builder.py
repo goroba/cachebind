@@ -6,7 +6,7 @@ import pytest
 from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
 
-from cacher import (
+from cachebind import (
     AsyncOrderedSetIndex,
     IntSerializer,
     OrderedSetIndex,
@@ -18,15 +18,15 @@ from cacher import (
     build_set_index,
     get_registry,
 )
-from cacher.serializers.datetime_serializer import DatetimeSerializer
-from cacher.storage.key_value.async_redis_string_storage import AsyncRedisStringStorage
-from cacher.storage.key_value.redis_string_storage import RedisStringStorage
-from cacher.storage.ordered_sets.async_redis_ordered_set_storage import AsyncRedisOrderedSetStorage
-from cacher.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
-from cacher.storage.ordered_sets.redis_ordered_set_storage import RedisOrderedSetStorage
-from cacher.storage.ordered_sets.storage import OrderedSetStorage
-from cacher.storage.sets.async_redis_set_storage import AsyncRedisSetStorage
-from cacher.storage.sets.redis_set_storage import RedisSetStorage
+from cachebind.serializers.datetime_serializer import DatetimeSerializer
+from cachebind.storage.key_value.async_redis_string_storage import AsyncRedisStringStorage
+from cachebind.storage.key_value.redis_string_storage import RedisStringStorage
+from cachebind.storage.ordered_sets.async_redis_ordered_set_storage import AsyncRedisOrderedSetStorage
+from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
+from cachebind.storage.ordered_sets.redis_ordered_set_storage import RedisOrderedSetStorage
+from cachebind.storage.ordered_sets.storage import OrderedSetStorage
+from cachebind.storage.sets.async_redis_set_storage import AsyncRedisSetStorage
+from cachebind.storage.sets.redis_set_storage import RedisSetStorage
 
 
 class Spy:
@@ -106,10 +106,10 @@ class BytesOrderedSet(OrderedSetStorage[Spy, bytes]):
 
 
 def test_ordered_set_builders_are_public() -> None:
-    import cacher
+    import cachebind
 
-    assert cacher.build_ordered_set_index is build_ordered_set_index
-    assert cacher.build_async_ordered_set_index is build_async_ordered_set_index
+    assert cachebind.build_ordered_set_index is build_ordered_set_index
+    assert cachebind.build_async_ordered_set_index is build_async_ordered_set_index
 
 
 def test_sync_ordered_set_index_round_trip() -> None:

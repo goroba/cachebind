@@ -1,8 +1,8 @@
-# cacher
+# cachebind
 
-A Python library.
+A Python library that names a cache binding — one storage key, a serializer, and a storage — and reads or writes Python values through it.
 
-**What is it for?** Cacher is a way to name a cache binding and use it from application code. An index holds one storage key, a serializer, and a storage. You build it once. Each call takes your storage client and reads or writes a Python value through that binding. Redis storages are included. Any storage that matches the protocol works the same way.
+**What is it for?** Cachebind is a way to name a cache binding and use it from application code. An index holds one storage key, a serializer, and a storage. You build it once. Each call takes your storage client and reads or writes a Python value through that binding. Redis storages are included. Any storage that matches the protocol works the same way.
 
 **What can an index store?** A key-value index stores one model per id. A set index stores members in one set. An ordered set index stores members with scores, lowest score first. Each has a sync builder and an async builder.
 
@@ -16,9 +16,9 @@ from uuid import UUID
 from pydantic import BaseModel
 from redis.asyncio import Redis as AsyncRedis
 
-from cacher import build_async_key_value_index
-from cacher.serializers.pydantic_serializer import PydanticSerializer
-from cacher.storage import AsyncRedisHashStorage
+from cachebind import build_async_key_value_index
+from cachebind.serializers.pydantic_serializer import PydanticSerializer
+from cachebind.storage import AsyncRedisHashStorage
 
 class User(BaseModel):
     id: UUID
@@ -46,8 +46,8 @@ async def main() -> None:
 Inside `main`, the same client works for a set index.
 
 ```python
-from cacher import IntSerializer, build_async_set_index
-from cacher.storage import AsyncRedisSetStorage
+from cachebind import IntSerializer, build_async_set_index
+from cachebind.storage import AsyncRedisSetStorage
 
 active = build_async_set_index(
     "active_users",
@@ -66,8 +66,8 @@ active = build_async_set_index(
 An ordered set uses the same client. Each member has one score. Adding a member that is already present updates its score. `rank` is 0-based, from the lowest score. `range` includes both ends. Ordered sets have no TTL.
 
 ```python
-from cacher import IntSerializer, build_async_ordered_set_index
-from cacher.storage import AsyncRedisOrderedSetStorage
+from cachebind import IntSerializer, build_async_ordered_set_index
+from cachebind.storage import AsyncRedisOrderedSetStorage
 
 ranking = build_async_ordered_set_index(
     "user_scores",
@@ -84,15 +84,15 @@ ranking = build_async_ordered_set_index(
 
 Sync indexes use `build_key_value_index`, `build_set_index`, and `build_ordered_set_index` with the matching sync storage. Those calls are not awaited.
 
-`get_registry` from `cacher` returns that index: `get_registry(AsyncRedis).get("users")`.
+`get_registry` from `cachebind` returns that index: `get_registry(AsyncRedis).get("users")`.
 
 ## Install
 
 ```bash
-pip install cacher
-pip install "cacher[redis]"
-pip install "cacher[pydantic]"
-pip install "cacher[redis,pydantic]"
+pip install cachebind
+pip install "cachebind[redis]"
+pip install "cachebind[pydantic]"
+pip install "cachebind[redis,pydantic]"
 ```
 
 From a checkout, the same extras are:

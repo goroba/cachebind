@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 
 import pytest
 
-from cacher import (
+from cachebind import (
     AsyncKeyValueIndex,
     AsyncKeyValueStorage,
     AsyncOrderedSetStorage,
@@ -391,7 +391,7 @@ def test_storage_protocols() -> None:
 
 
 def test_public_api_omits_redis_storages() -> None:
-    import cacher
+    import cachebind
 
     for name in (
         "RedisStringStorage",
@@ -403,5 +403,5 @@ def test_public_api_omits_redis_storages() -> None:
         "AsyncRedisSetStorage",
         "AsyncRedisOrderedSetStorage",
     ):
-        assert name not in cacher.__all__
-        assert not hasattr(cacher, name)
+        assert name not in cachebind.__all__
+        assert not hasattr(cachebind, name)

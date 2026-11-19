@@ -2,9 +2,9 @@ import asyncio
 
 import fakeredis
 
-from cacher.storage import AsyncRedisSetStorage, RedisSetStorage
-from cacher.storage.sets.async_storage import AsyncSetStorage
-from cacher.storage.sets.storage import SetStorage
+from cachebind.storage import AsyncRedisSetStorage, RedisSetStorage
+from cachebind.storage.sets.async_storage import AsyncSetStorage
+from cachebind.storage.sets.storage import SetStorage
 
 
 class _SetSpy:

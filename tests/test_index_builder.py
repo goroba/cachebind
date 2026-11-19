@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
 
-from cacher import (
+from cachebind import (
     AsyncKeyValueIndex,
     DictSerializer,
     IntSerializer,
@@ -19,15 +19,15 @@ from cacher import (
     build_key_value_index,
     get_registry,
 )
-from cacher.indexes.base import _registries
-from cacher.serializers.datetime_serializer import DatetimeSerializer
-from cacher.serializers.pydantic_serializer import PydanticSerializer
-from cacher.serializers.serializer import Serializer
-from cacher.storage.key_value.async_redis_hash_storage import AsyncRedisHashStorage
-from cacher.storage.key_value.async_redis_string_storage import AsyncRedisStringStorage
-from cacher.storage.key_value.redis_hash_storage import RedisHashStorage
-from cacher.storage.key_value.redis_string_storage import RedisStringStorage
-from cacher.storage.key_value.storage import KeyValueStorage
+from cachebind.indexes.base import _registries
+from cachebind.serializers.datetime_serializer import DatetimeSerializer
+from cachebind.serializers.pydantic_serializer import PydanticSerializer
+from cachebind.serializers.serializer import Serializer
+from cachebind.storage.key_value.async_redis_hash_storage import AsyncRedisHashStorage
+from cachebind.storage.key_value.async_redis_string_storage import AsyncRedisStringStorage
+from cachebind.storage.key_value.redis_hash_storage import RedisHashStorage
+from cachebind.storage.key_value.redis_string_storage import RedisStringStorage
+from cachebind.storage.key_value.storage import KeyValueStorage
 
 USER_ID = UUID("12345678-1234-5678-1234-567812345678")
 MOMENT = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
@@ -121,10 +121,10 @@ class UuidFieldStorage(KeyValueStorage[Memory, UUID, str]):
 
 
 def test_builders_are_public() -> None:
-    import cacher
+    import cachebind
 
-    assert cacher.build_key_value_index is build_key_value_index
-    assert cacher.build_async_key_value_index is build_async_key_value_index
+    assert cachebind.build_key_value_index is build_key_value_index
+    assert cachebind.build_async_key_value_index is build_async_key_value_index
 
 
 def test_sync_datetime_index_round_trip() -> None:

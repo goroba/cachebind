@@ -1,8 +1,8 @@
-import cacher
+import cachebind
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from cacher.serializers.pydantic_serializer import PydanticSerializer
+from cachebind.serializers.pydantic_serializer import PydanticSerializer
 
 
 class Address(BaseModel):
@@ -38,5 +38,5 @@ def test_json_model_rejects_non_model() -> None:
 
 
 def test_public_api_omits_pydantic_serializer() -> None:
-    assert "PydanticSerializer" not in cacher.__all__
-    assert not hasattr(cacher, "PydanticSerializer")
+    assert "PydanticSerializer" not in cachebind.__all__
+    assert not hasattr(cachebind, "PydanticSerializer")
