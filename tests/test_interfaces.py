@@ -8,11 +8,13 @@ from cachebind import (
     AsyncKeyValueStorage,
     AsyncOrderedSetStorage,
     AsyncSetStorage,
+    AsyncTrieStorage,
     IntSerializer,
     KeyValueIndex,
     KeyValueStorage,
     OrderedSetStorage,
     SetStorage,
+    TrieStorage,
     get_registry,
 )
 
@@ -381,6 +383,106 @@ class AsyncMemoryOrderedSet:
             yield _item
 
 
+class MemoryTrie:
+    def add(
+        self,
+        client: object,
+        name: str,
+        string: str,
+        score: float,
+        payload: str,
+        *,
+        increment: bool = False,
+    ) -> None:
+        return None
+
+    def madd(
+        self,
+        client: object,
+        name: str,
+        entries: Sequence[tuple[str, float, str]],
+        *,
+        increment: bool = False,
+    ) -> None:
+        return None
+
+    def remove(self, client: object, name: str, string: str) -> None:
+        return None
+
+    def mremove(self, client: object, name: str, strings: Sequence[str]) -> None:
+        return None
+
+    def search(
+        self,
+        client: object,
+        name: str,
+        prefix: str,
+        *,
+        fuzzy: bool = False,
+        limit: int = 10,
+    ) -> list[str]:
+        return []
+
+    def length(self, client: object, name: str) -> int:
+        return 0
+
+    def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
+
+    def drop(self, client: object, name: str) -> None:
+        return None
+
+
+class AsyncMemoryTrie:
+    async def add(
+        self,
+        client: object,
+        name: str,
+        string: str,
+        score: float,
+        payload: str,
+        *,
+        increment: bool = False,
+    ) -> None:
+        return None
+
+    async def madd(
+        self,
+        client: object,
+        name: str,
+        entries: Sequence[tuple[str, float, str]],
+        *,
+        increment: bool = False,
+    ) -> None:
+        return None
+
+    async def remove(self, client: object, name: str, string: str) -> None:
+        return None
+
+    async def mremove(self, client: object, name: str, strings: Sequence[str]) -> None:
+        return None
+
+    async def search(
+        self,
+        client: object,
+        name: str,
+        prefix: str,
+        *,
+        fuzzy: bool = False,
+        limit: int = 10,
+    ) -> list[str]:
+        return []
+
+    async def length(self, client: object, name: str) -> int:
+        return 0
+
+    async def swap(self, client: object, name: str) -> str:
+        return f"{name}:swap"
+
+    async def drop(self, client: object, name: str) -> None:
+        return None
+
+
 def test_storage_protocols() -> None:
     assert isinstance(MemoryHash(), KeyValueStorage)
     assert isinstance(AsyncMemoryHash(), AsyncKeyValueStorage)
@@ -388,6 +490,8 @@ def test_storage_protocols() -> None:
     assert isinstance(AsyncMemorySet(), AsyncSetStorage)
     assert isinstance(MemoryOrderedSet(), OrderedSetStorage)
     assert isinstance(AsyncMemoryOrderedSet(), AsyncOrderedSetStorage)
+    assert isinstance(MemoryTrie(), TrieStorage)
+    assert isinstance(AsyncMemoryTrie(), AsyncTrieStorage)
 
 
 def test_public_api_omits_redis_storages() -> None:
@@ -398,10 +502,12 @@ def test_public_api_omits_redis_storages() -> None:
         "RedisHashStorage",
         "RedisSetStorage",
         "RedisOrderedSetStorage",
+        "RedisTrieStorage",
         "AsyncRedisStringStorage",
         "AsyncRedisHashStorage",
         "AsyncRedisSetStorage",
         "AsyncRedisOrderedSetStorage",
+        "AsyncRedisTrieStorage",
     ):
         assert name not in cachebind.__all__
         assert not hasattr(cachebind, name)

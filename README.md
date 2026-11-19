@@ -4,11 +4,11 @@ A Python library that names a cache binding — one storage key, a serializer, a
 
 **What is it for?** Cachebind is a way to name a cache binding and use it from application code. An index holds one storage key, a serializer, and a storage. You build it once. Each call takes your storage client and reads or writes a Python value through that binding. Redis storages are included. Any storage that matches the protocol works the same way.
 
-**What can an index store?** A key-value index stores one model per id. A set index stores members in one set. An ordered set index stores members with scores, lowest score first. Each has a sync builder and an async builder.
+**What can an index store?** A key-value index stores one model per id. A set index stores members in one set. An ordered set index stores members with scores, lowest score first. A trie index stores suggestion strings with scores and keeps each member as the payload. `search` returns those members in rank order. Each has a sync builder and an async builder.
 
 ## Indexes
 
-Build an index once with `build_async_key_value_index`, `build_async_set_index`, or `build_async_ordered_set_index`. Pass a key, the value type, a serializer instance, and a storage instance. Then pass a storage client into every call.
+Build an index once with `build_async_key_value_index`, `build_async_set_index`, `build_async_ordered_set_index`, or `build_async_trie_index`. Pass a key, the value type, a serializer instance, and a storage instance. Then pass a storage client into every call.
 
 ```python
 from uuid import UUID
@@ -82,7 +82,27 @@ ranking = build_async_ordered_set_index(
     await ranking.remove(client, 1)
 ```
 
-Sync indexes use `build_key_value_index`, `build_set_index`, and `build_ordered_set_index` with the matching sync storage. Those calls are not awaited.
+A trie uses the same client. The suggestion string is the text you complete. The member is stored as the payload. `search` deserializes those payloads in rank order. `limit` defaults to 10. A trie has no TTL.
+
+```python
+from cachebind import IntSerializer, build_async_trie_index
+from cachebind.storage import AsyncRedisTrieStorage
+
+cities = build_async_trie_index(
+    "cities",
+    member_type=int,
+    serializer=IntSerializer(),
+    storage=AsyncRedisTrieStorage(),
+)
+
+    await cities.add(client, "Paris", 1, 900.0)
+    matches = await cities.search(client, "P")
+    await cities.remove(client, "Paris")
+```
+
+`matches` is `[1]`. Redis 8 includes the suggestion commands this storage sends.
+
+Sync indexes use `build_key_value_index`, `build_set_index`, `build_ordered_set_index`, and `build_trie_index` with the matching sync storage. Those calls are not awaited.
 
 `get_registry` from `cachebind` returns that index: `get_registry(AsyncRedis).get("users")`.
 
@@ -124,4 +144,5 @@ twine upload dist/*
 ## Documentation
 
 - [Leaderboard](docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres
+- [Trie](docs/trie.md) — city names in a Redis Search trie, with cities loaded from Postgres on search
 - [Write-Back Caching example](docs/write-back-caching.md) — collect last-visit times, then save them to the database
