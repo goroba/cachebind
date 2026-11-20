@@ -1,9 +1,9 @@
-"""Breadcrumbs protocol."""
+"""Tag maker protocol."""
 
 from typing import Protocol
 
 
-class Breadcrumbs(Protocol):
+class TagMaker(Protocol):
     """Encode an index and an identifier into one string, and split that string back."""
 
     def encode(self, index: str, identifier: str) -> str:

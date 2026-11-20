@@ -144,5 +144,5 @@ twine upload dist/*
 ## Documentation
 
 - [Leaderboard](docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres
-- [Trie](docs/trie.md) — city names in a Redis Search trie, with cities loaded from Postgres on search
+- [Trie (Prefix Tree)](docs/trie.md) — city names in a Redis Search trie, with cities loaded from Postgres on search
 - [Write-Back Caching example](docs/write-back-caching.md) — collect last-visit times, then save them to the database

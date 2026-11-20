@@ -1,9 +1,9 @@
-"""Colon-separated breadcrumbs."""
+"""Colon-separated tags."""
 
-from cachebind.breadcrumbs.breadcrumbs import Breadcrumbs
+from cachebind.tagging.tag_maker.protocol import TagMaker
 
 
-class ColonBreadcrumbs(Breadcrumbs):
+class ColonTagMaker(TagMaker):
     """Join and split an index and an identifier with a colon.
 
     ``decode`` splits on the first colon, so an identifier may contain colons.
@@ -15,6 +15,6 @@ class ColonBreadcrumbs(Breadcrumbs):
     def decode(self, value: str) -> tuple[str, str]:
         parts = value.split(":", 1)
         if len(parts) != 2:
-            raise ValueError(f"invalid breadcrumb: {value!r}")
+            raise ValueError(f"invalid tag: {value!r}")
         index, identifier = parts
         return index, identifier

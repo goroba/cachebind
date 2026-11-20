@@ -1,4 +1,4 @@
-# Trie
+# Trie (Prefix Tree)
 
 Redis stores a trie named `cities`. Redis Search keeps that trie as one suggestion dictionary. Each suggestion string is a city name. Each score is that city's clicks. Each payload is the city id. Postgres stores the city rows. The index reaches Postgres only through a serializer you pass on each call.
 
