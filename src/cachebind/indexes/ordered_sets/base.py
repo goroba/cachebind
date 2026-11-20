@@ -6,6 +6,7 @@ from collections.abc import Hashable
 
 from cachebind.indexes.base import Index
 from cachebind.serializers.serializer import Serializer
+from cachebind.tagging import NoopTagMaker, TagMaker
 from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
 from cachebind.storage.ordered_sets.storage import OrderedSetStorage
 
@@ -18,6 +19,7 @@ class OrderedSetBase[ClientType, MemberType, StorageType: Hashable](Index):
     """
 
     member: type[MemberType]
+    tag_maker: TagMaker = NoopTagMaker()
     serializer: Serializer[MemberType, StorageType]
     storage: (
         OrderedSetStorage[ClientType, StorageType]

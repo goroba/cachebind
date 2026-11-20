@@ -4,6 +4,7 @@ from collections.abc import Hashable, Sequence
 from typing import Self
 
 from cachebind.indexes._serializer import resolve_serializer
+from cachebind.indexes._tag import make_tag
 from cachebind.indexes.tries.base import TrieBase
 from cachebind.storage.tries._values import check_limit
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
@@ -29,7 +30,7 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
         *,
         increment: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> str:
         """Add ``string`` with ``score`` and ``member`` as its payload.
 
         A string that is already present gets the new score and payload.
@@ -44,6 +45,7 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
             serializer.serialize(member),
             increment=increment,
         )
+        return make_tag(self, "")
 
     async def madd(
         self,
@@ -52,10 +54,10 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
         *,
         increment: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> list[str]:
         """Add every suggestion. A repeated string keeps the last score and payload."""
         if not entries:
-            return
+            return []
         serializer = resolve_serializer(self.serializer, kwargs)
         serialized = serializer.mserialize([member for _string, member, _score in entries])
         stored = [
@@ -63,6 +65,8 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
             for (string, _member, score), payload in zip(entries, serialized, strict=True)
         ]
         await self.storage.madd(client, self.key, stored, increment=increment)
+        tag = make_tag(self, "")
+        return [tag] * len(entries)
 
     async def remove(self, client: ClientType, string: str) -> None:
         """Remove the suggestion ``string``. A missing string is not an error."""

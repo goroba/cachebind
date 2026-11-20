@@ -27,6 +27,7 @@ from cachebind.indexes import (
     build_trie_index,
     get_registry,
 )
+from cachebind.tagging import ColonTagMaker, NoopTagMaker, TagMaker
 from cachebind.serializers import (
     BoolSerializer,
     DataclassSerializer,
@@ -64,6 +65,7 @@ __all__ = [
     "AsyncTrieIndex",
     "AsyncTrieStorage",
     "BoolSerializer",
+    "ColonTagMaker",
     "DataclassSerializer",
     "DatetimeSerializer",
     "DictSerializer",
@@ -72,6 +74,7 @@ __all__ = [
     "IndexRegistry",
     "IntSerializer",
     "NoopSerializer",
+    "NoopTagMaker",
     "KeyValueBase",
     "KeyValueIndex",
     "KeyValueStorage",
@@ -79,6 +82,7 @@ __all__ = [
     "OrderedSetIndex",
     "OrderedSetStorage",
     "Serializer",
+    "TagMaker",
     "SetBase",
     "SetIndex",
     "SetStorage",

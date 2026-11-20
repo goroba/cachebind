@@ -4,6 +4,7 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import Self
 
 from cachebind.indexes._serializer import resolve_serializer
+from cachebind.indexes._tag import make_tag
 from cachebind.indexes.key_value.base import KeyValueBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.key_value.storage import KeyValueStorage
@@ -42,10 +43,12 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         *,
         ttl: int | None = None,
         **kwargs,
-    ) -> None:
-        """Store ``value`` under ``id``."""
+    ) -> str:
+        """Store ``value`` under ``id``. Returns a cache tag for ``id``."""
         serializer = resolve_serializer(self.serializer, kwargs)
-        self.storage.set(client, self.key, str(id), serializer.serialize(value), ttl=ttl)
+        field = str(id)
+        self.storage.set(client, self.key, field, serializer.serialize(value), ttl=ttl)
+        return make_tag(self, field)
 
     def delete(self, client: ClientType, id: IdType) -> None:
         """Remove ``id``. A missing id is not an error."""
@@ -83,15 +86,16 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         *,
         ttl: int | None = None,
         **kwargs,
-    ) -> None:
-        """Store every item. ``ttl`` applies to each id."""
+    ) -> list[str]:
+        """Store every item. ``ttl`` applies to each id. Returns one tag per item."""
         if not items:
-            return
+            return []
         serializer = resolve_serializer(self.serializer, kwargs)
         fields = [str(id) for id in items]
         values = serializer.mserialize(list(items.values()))
         mapping = dict(zip(fields, values, strict=True))
         self.storage.mset(client, self.key, mapping, ttl=ttl)
+        return [make_tag(self, field) for field in fields]
 
     def swap(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""

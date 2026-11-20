@@ -8,7 +8,9 @@ A Python library that names a cache binding — one storage key, a serializer, a
 
 ## Indexes
 
-Build an index once with `build_async_key_value_index`, `build_async_set_index`, `build_async_ordered_set_index`, or `build_async_trie_index`. Pass a key, the value type, a serializer instance, and a storage instance. Then pass a storage client into every call.
+Build an index once with `build_async_key_value_index`, `build_async_set_index`, `build_async_ordered_set_index`, or `build_async_trie_index`. Pass a key, the value type, a serializer instance, and a storage instance. Optionally pass a `tag_maker` (default `NoopTagMaker`) on key-value, set, and ordered-set builders. Trie indexes always use `NoopTagMaker` and do not accept `tag_maker`. Then pass a storage client into every call.
+
+`set` and `add` return one cache tag string. `mset` and `madd` return one tag per item. With `ColonTagMaker`, key-value tags use `str(id)` and set or ordered-set tags use the serialized member text. With the default `NoopTagMaker`, those writes return an empty tag.
 
 ```python
 from uuid import UUID

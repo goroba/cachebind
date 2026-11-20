@@ -6,6 +6,7 @@ from collections.abc import Hashable
 
 from cachebind.indexes.base import Index
 from cachebind.serializers.serializer import Serializer
+from cachebind.tagging import NoopTagMaker, TagMaker
 from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
 from cachebind.storage.key_value.storage import KeyValueStorage
 
@@ -21,6 +22,7 @@ class KeyValueBase[ClientType, IdType: Hashable, ModelType, StorageType](Index):
 
     identifier: type[IdType]
     model: type[ModelType]
+    tag_maker: TagMaker = NoopTagMaker()
     serializer: Serializer[ModelType, StorageType]
     storage: (
         KeyValueStorage[ClientType, str, StorageType]

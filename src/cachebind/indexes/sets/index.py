@@ -4,6 +4,7 @@ from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import Self
 
 from cachebind.indexes._serializer import resolve_serializer
+from cachebind.indexes._tag import make_tag, storage_identifier
 from cachebind.indexes.sets.base import SetBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.sets.storage import SetStorage
@@ -26,22 +27,26 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         client: ClientType,
         member: MemberType,
         **kwargs,
-    ) -> None:
+    ) -> str:
         """Add ``member``. A member that is already present is not an error."""
         serializer = resolve_serializer(self.serializer, kwargs)
-        self.storage.add(client, self.key, serializer.serialize(member))
+        stored = serializer.serialize(member)
+        self.storage.add(client, self.key, stored)
+        return make_tag(self, storage_identifier(stored))
 
     def madd(
         self,
         client: ClientType,
         members: Sequence[MemberType],
         **kwargs,
-    ) -> None:
+    ) -> list[str]:
         """Add every member."""
         if not members:
-            return
+            return []
         serializer = resolve_serializer(self.serializer, kwargs)
-        self.storage.madd(client, self.key, serializer.mserialize(members))
+        stored = serializer.mserialize(members)
+        self.storage.madd(client, self.key, stored)
+        return [make_tag(self, storage_identifier(value)) for value in stored]
 
     def remove(
         self,

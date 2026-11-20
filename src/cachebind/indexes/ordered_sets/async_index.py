@@ -4,6 +4,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Hashable, Iterator, Se
 from typing import Self
 
 from cachebind.indexes._serializer import resolve_serializer
+from cachebind.indexes._tag import make_tag, storage_identifier
 from cachebind.indexes.ordered_sets.base import OrderedSetBase, _empty_range
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
@@ -27,24 +28,27 @@ class AsyncOrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         member: MemberType,
         score: float,
         **kwargs,
-    ) -> None:
+    ) -> str:
         """Add ``member`` with ``score``. A member that is already present gets the new score."""
         serializer = resolve_serializer(self.serializer, kwargs)
-        await self.storage.add(client, self.key, serializer.serialize(member), score)
+        stored = serializer.serialize(member)
+        await self.storage.add(client, self.key, stored, score)
+        return make_tag(self, storage_identifier(stored))
 
     async def madd(
         self,
         client: ClientType,
         members: Sequence[tuple[MemberType, float]],
         **kwargs,
-    ) -> None:
+    ) -> list[str]:
         """Add every member with its score. A repeated member keeps the last score."""
         if not members:
-            return
+            return []
         serializer = resolve_serializer(self.serializer, kwargs)
         serialized = serializer.mserialize([member for member, _score in members])
         scores = (score for _member, score in members)
         await self.storage.madd(client, self.key, list(zip(serialized, scores, strict=True)))
+        return [make_tag(self, storage_identifier(value)) for value in serialized]
 
     async def remove(
         self,
