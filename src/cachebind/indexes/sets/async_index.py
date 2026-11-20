@@ -1,7 +1,7 @@
 """Asynchronous set index."""
 
 from collections.abc import AsyncIterable, AsyncIterator, Hashable, Sequence
-from typing import Self
+from typing import Self, cast
 
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._tag import make_tag, storage_identifier
@@ -57,6 +57,13 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
         """Remove ``member``. A missing member is not an error."""
         serializer = resolve_serializer(self.serializer, kwargs)
         await self.storage.remove(client, self.key, serializer.serialize(member))
+
+    async def evict(self, client: ClientType, identifier: str) -> None:
+        """Remove the entry for ``identifier``. A missing entry is not an error.
+
+        ``identifier`` is the tag payload for one member (not the full encoded tag).
+        """
+        await self.storage.remove(client, self.key, cast(StorageType, identifier))
 
     async def mremove(
         self,

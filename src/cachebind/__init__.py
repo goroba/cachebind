@@ -3,10 +3,12 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from cachebind.indexes import (
+    AsyncEvictableIndex,
     AsyncKeyValueIndex,
     AsyncOrderedSetIndex,
     AsyncSetIndex,
     AsyncTrieIndex,
+    EvictableIndex,
     Index,
     IndexRegistry,
     KeyValueBase,
@@ -56,6 +58,7 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 __all__ = [
+    "AsyncEvictableIndex",
     "AsyncKeyValueIndex",
     "AsyncKeyValueStorage",
     "AsyncOrderedSetIndex",
@@ -70,6 +73,7 @@ __all__ = [
     "DatetimeSerializer",
     "DictSerializer",
     "FloatSerializer",
+    "EvictableIndex",
     "Index",
     "IndexRegistry",
     "IntSerializer",

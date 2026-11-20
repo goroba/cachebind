@@ -54,6 +54,13 @@ class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         """Remove ``id``. A missing id is not an error."""
         await self.storage.delete(client, self.key, str(id))
 
+    async def evict(self, client: ClientType, identifier: str) -> None:
+        """Remove the entry for ``identifier``. A missing entry is not an error.
+
+        ``identifier`` is the tag payload for one id (not the full encoded tag).
+        """
+        await self.storage.delete(client, self.key, identifier)
+
     async def mdelete(self, client: ClientType, ids: Sequence[IdType]) -> None:
         """Remove every id. Missing ids are not an error."""
         if not ids:

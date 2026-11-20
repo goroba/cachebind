@@ -1,6 +1,7 @@
 """Indexes bind a value to storage and register that binding by key."""
 
 from cachebind.indexes.base import Index, get_registry
+from cachebind.indexes.evict import AsyncEvictableIndex, EvictableIndex
 from cachebind.indexes.key_value import (
     AsyncKeyValueIndex,
     KeyValueBase,
@@ -32,10 +33,12 @@ from cachebind.indexes.tries import (
 )
 
 __all__ = [
+    "AsyncEvictableIndex",
     "AsyncKeyValueIndex",
     "AsyncOrderedSetIndex",
     "AsyncSetIndex",
     "AsyncTrieIndex",
+    "EvictableIndex",
     "Index",
     "IndexRegistry",
     "KeyValueBase",

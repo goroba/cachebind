@@ -72,6 +72,10 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
         """Remove the suggestion ``string``. A missing string is not an error."""
         await self.storage.remove(client, self.key, string)
 
+    async def evict(self, client: ClientType, identifier: str) -> None:
+        """Not supported: trie tags do not identify one entry."""
+        raise NotImplementedError("evict is not supported for trie indexes")
+
     async def mremove(self, client: ClientType, strings: Sequence[str]) -> None:
         """Remove every suggestion string. Missing strings are not an error."""
         if not strings:

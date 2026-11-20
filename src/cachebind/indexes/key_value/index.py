@@ -54,6 +54,13 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         """Remove ``id``. A missing id is not an error."""
         self.storage.delete(client, self.key, str(id))
 
+    def evict(self, client: ClientType, identifier: str) -> None:
+        """Remove the entry for ``identifier``. A missing entry is not an error.
+
+        ``identifier`` is the tag payload for one id (not the full encoded tag).
+        """
+        self.storage.delete(client, self.key, identifier)
+
     def mdelete(self, client: ClientType, ids: Sequence[IdType]) -> None:
         """Remove every id. Missing ids are not an error."""
         if not ids:
