@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cachebind"
-version = "1.0.0"
-description = "A Python library."
+version = "1.0.1"
+description = "Python library for building clean caching pipelines with support for common caching patterns."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
