@@ -135,16 +135,6 @@ Runtime dependencies live in `pyproject.toml` under `[project] dependencies`. Op
 pytest
 ```
 
-## Publish
-
-When the package is ready for PyPI, build and upload it. Confirm the project name is free on PyPI first, and fill in the author details in `pyproject.toml`.
-
-```bash
-pip install build twine
-python -m build
-twine upload dist/*
-```
-
 ## Documentation
 
 - [Leaderboard](docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres
