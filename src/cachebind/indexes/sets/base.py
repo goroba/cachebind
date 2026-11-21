@@ -6,7 +6,7 @@ from collections.abc import Hashable
 
 from cachebind.indexes.base import Index
 from cachebind.serializers.serializer import Serializer
-from cachebind.tagging import NoopTagMaker, TagMaker
+from cachebind.tagging import Breadcrumbs, NoopBreadcrumbs
 from cachebind.storage.sets.async_storage import AsyncSetStorage
 from cachebind.storage.sets.storage import SetStorage
 
@@ -19,6 +19,6 @@ class SetBase[ClientType, MemberType, StorageType: Hashable](Index):
     """
 
     member: type[MemberType]
-    tag_maker: TagMaker = NoopTagMaker()
+    breadcrumbs: Breadcrumbs = NoopBreadcrumbs()
     serializer: Serializer[MemberType, StorageType]
     storage: SetStorage[ClientType, StorageType] | AsyncSetStorage[ClientType, StorageType]

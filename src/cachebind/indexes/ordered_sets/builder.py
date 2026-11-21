@@ -17,7 +17,7 @@ from cachebind.indexes._builder import (
 from cachebind.indexes.ordered_sets.async_index import AsyncOrderedSetIndex
 from cachebind.indexes.ordered_sets.index import OrderedSetIndex
 from cachebind.serializers.serializer import Serializer
-from cachebind.tagging import NoopTagMaker, TagMaker
+from cachebind.tagging import Breadcrumbs, ColonBreadcrumbs, NoopBreadcrumbs
 from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
 from cachebind.storage.ordered_sets.storage import OrderedSetStorage
 
@@ -33,7 +33,7 @@ def build_ordered_set_index[
     member_type: type[MemberType],
     serializer: Serializer[MemberType, StorageType],
     storage: Storage,
-    tag_maker: TagMaker | None = None,
+    breadcrumbs: Breadcrumbs | None = None,
 ) -> OrderedSetIndex[ClientType, MemberType, StorageType]:
     """Register a sync ordered-set index whose member, serializer, and storage types agree.
 
@@ -47,7 +47,7 @@ def build_ordered_set_index[
             member_type=member_type,
             serializer=serializer,
             storage=storage,
-            tag_maker=tag_maker,
+            breadcrumbs=breadcrumbs,
             base=OrderedSetIndex,
             protocol=OrderedSetStorage,
             other=AsyncOrderedSetStorage,
@@ -66,7 +66,7 @@ def build_async_ordered_set_index[
     member_type: type[MemberType],
     serializer: Serializer[MemberType, StorageType],
     storage: Storage,
-    tag_maker: TagMaker | None = None,
+    breadcrumbs: Breadcrumbs | None = None,
 ) -> AsyncOrderedSetIndex[ClientType, MemberType, StorageType]:
     """Register an async ordered-set index whose member, serializer, and storage types agree.
 
@@ -80,7 +80,7 @@ def build_async_ordered_set_index[
             member_type=member_type,
             serializer=serializer,
             storage=storage,
-            tag_maker=tag_maker,
+            breadcrumbs=breadcrumbs,
             base=AsyncOrderedSetIndex,
             protocol=AsyncOrderedSetStorage,
             other=OrderedSetStorage,
@@ -94,7 +94,7 @@ def _build(
     member_type: Any,
     serializer: Any,
     storage: Any,
-    tag_maker: TagMaker | None,
+    breadcrumbs: Breadcrumbs | None,
     base: type[OrderedSetIndex[Any, Any, Any]] | type[AsyncOrderedSetIndex[Any, Any, Any]],
     protocol: type[OrderedSetStorage[Any, Any]] | type[AsyncOrderedSetStorage[Any, Any]],
     other: type[OrderedSetStorage[Any, Any]] | type[AsyncOrderedSetStorage[Any, Any]],
@@ -107,17 +107,17 @@ def _build(
     storage_type = _storage_type(key, storage_cls, protocol, other)
     check_storage_type(key, serializer_storage, storage_type, storage_cls)
     client_type = storage_client_type(key, storage_cls, protocol)
-    if tag_maker is None:
-        tag_maker = NoopTagMaker()
+    if breadcrumbs is None:
+        breadcrumbs = ColonBreadcrumbs()
     else:
-        instance_class(key, tag_maker, label="tag_maker")
+        instance_class(key, breadcrumbs, label="breadcrumbs")
     return index_class(
         key,
         serializer_instance=serializer,
         storage=storage,
         base=base,
         module=__name__,
-        attributes={"member": member_type, "client_type": client_type, "tag_maker": tag_maker},
+        attributes={"member": member_type, "client_type": client_type, "breadcrumbs": breadcrumbs},
     )
 
 

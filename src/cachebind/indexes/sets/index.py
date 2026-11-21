@@ -4,7 +4,7 @@ from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import Self, cast
 
 from cachebind.indexes._serializer import resolve_serializer
-from cachebind.indexes._tag import make_tag, storage_identifier
+from cachebind.indexes._breadcrumb import storage_identifier
 from cachebind.indexes.sets.base import SetBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.sets.storage import SetStorage
@@ -32,7 +32,7 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         stored = serializer.serialize(member)
         self.storage.add(client, self.key, stored)
-        return make_tag(self, storage_identifier(stored))
+        return self.breadcrumbs.encode(self.key, storage_identifier(stored))
 
     def madd(
         self,
@@ -46,7 +46,9 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         stored = serializer.mserialize(members)
         self.storage.madd(client, self.key, stored)
-        return [make_tag(self, storage_identifier(value)) for value in stored]
+        return [
+            self.breadcrumbs.encode(self.key, storage_identifier(value)) for value in stored
+        ]
 
     def remove(
         self,

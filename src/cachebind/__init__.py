@@ -29,7 +29,15 @@ from cachebind.indexes import (
     build_trie_index,
     get_registry,
 )
-from cachebind.tagging import ColonTagMaker, NoopTagMaker, TagMaker
+from cachebind.tagging import (
+    AsyncSetTagKeeper,
+    AsyncTagKeeper,
+    Breadcrumbs,
+    ColonBreadcrumbs,
+    NoopBreadcrumbs,
+    SetTagKeeper,
+    TagKeeper,
+)
 from cachebind.serializers import (
     BoolSerializer,
     DataclassSerializer,
@@ -40,6 +48,7 @@ from cachebind.serializers import (
     NoopSerializer,
     Serializer,
     StrSerializer,
+    UuidSerializer,
 )
 from cachebind.storage import (
     AsyncKeyValueStorage,
@@ -65,10 +74,14 @@ __all__ = [
     "AsyncOrderedSetStorage",
     "AsyncSetIndex",
     "AsyncSetStorage",
+    "AsyncSetTagKeeper",
+    "AsyncTagKeeper",
     "AsyncTrieIndex",
     "AsyncTrieStorage",
     "BoolSerializer",
-    "ColonTagMaker",
+    "Breadcrumbs",
+    "ColonBreadcrumbs",
+    "NoopBreadcrumbs",
     "DataclassSerializer",
     "DatetimeSerializer",
     "DictSerializer",
@@ -78,7 +91,6 @@ __all__ = [
     "IndexRegistry",
     "IntSerializer",
     "NoopSerializer",
-    "NoopTagMaker",
     "KeyValueBase",
     "KeyValueIndex",
     "KeyValueStorage",
@@ -86,11 +98,13 @@ __all__ = [
     "OrderedSetIndex",
     "OrderedSetStorage",
     "Serializer",
-    "TagMaker",
     "SetBase",
     "SetIndex",
     "SetStorage",
+    "SetTagKeeper",
+    "TagKeeper",
     "StrSerializer",
+    "UuidSerializer",
     "TrieBase",
     "TrieIndex",
     "TrieStorage",

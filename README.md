@@ -8,9 +8,11 @@ A Python library that names a cache binding — one storage key, a serializer, a
 
 ## Indexes
 
-Build an index once with `build_async_key_value_index`, `build_async_set_index`, `build_async_ordered_set_index`, or `build_async_trie_index`. Pass a key, the value type, a serializer instance, and a storage instance. Optionally pass a `tag_maker` (default `NoopTagMaker`) on key-value, set, and ordered-set builders. Trie indexes always use `NoopTagMaker` and do not accept `tag_maker`. Then pass a storage client into every call.
+Build an index once with `build_async_key_value_index`, `build_async_set_index`, `build_async_ordered_set_index`, or `build_async_trie_index`. Pass a key, the value type, a serializer instance, and a storage instance. Optionally pass `breadcrumbs` (default `ColonBreadcrumbs`) on key-value, set, and ordered-set builders. Trie indexes always use `NoopBreadcrumbs` and do not accept `breadcrumbs`. Then pass a storage client into every call.
 
-`set` and `add` return one cache tag string. `mset` and `madd` return one tag per item. With `ColonTagMaker`, key-value tags use `str(id)` and set or ordered-set tags use the serialized member text. With the default `NoopTagMaker`, those writes return an empty tag. Split a tag to get the index name and identifier, then call `evict(client, identifier)` on that index to remove the entry (not supported on trie indexes).
+`set` and `add` return one breadcrumb. `mset` and `madd` return one breadcrumb per item. By default, breadcrumbs encode the index key and eviction identifier. With `NoopBreadcrumbs`, writes return an empty breadcrumb. Decode a breadcrumb to get the index name and identifier, then call `evict(client, identifier)` on that index (not supported on trie indexes).
+
+A **tag keeper** groups those breadcrumbs in Redis sets. Create `SetTagKeeper(storage=RedisSetStorage())` or `AsyncSetTagKeeper` with async set storage; optional `name` defaults to `"default"`, optional `breadcrumbs` defaults to `ColonBreadcrumbs()` for decoding on `evict`. Each logical `tag` is one set at `tag_keeper:{name}:{tag}`. After writes, call `add(client, tag, breadcrumb)` or `madd(client, tag, breadcrumbs)`; call `evict(client, tag)` to decode every breadcrumb in that set, evict through the index registry, and delete the set.
 
 ```python
 from uuid import UUID
@@ -146,5 +148,6 @@ twine upload dist/*
 ## Documentation
 
 - [Leaderboard](docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres
+- [Tag-Based Caching](docs/tag-based-caching.md) — bind key-value user cache and leaderboard entry under `user:{id}`, evict together on delete
 - [Trie (Prefix Tree)](docs/trie.md) — city names in a Redis Search trie, with cities loaded from Postgres on search
 - [Write-Back Caching example](docs/write-back-caching.md) — collect last-visit times, then save them to the database

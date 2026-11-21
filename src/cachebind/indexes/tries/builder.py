@@ -17,7 +17,7 @@ from cachebind.indexes._builder import (
 from cachebind.indexes.tries.async_index import AsyncTrieIndex
 from cachebind.indexes.tries.index import TrieIndex
 from cachebind.serializers.serializer import Serializer
-from cachebind.tagging import NoopTagMaker
+from cachebind.tagging import NoopBreadcrumbs
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
 from cachebind.storage.tries.storage import TrieStorage
 
@@ -111,7 +111,7 @@ def _build(
         attributes={
             "member": member_type,
             "client_type": client_type,
-            "tag_maker": NoopTagMaker(),
+            "breadcrumbs": NoopBreadcrumbs(),
         },
     )
 

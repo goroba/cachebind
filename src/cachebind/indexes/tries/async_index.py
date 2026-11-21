@@ -4,7 +4,6 @@ from collections.abc import Hashable, Sequence
 from typing import Self
 
 from cachebind.indexes._serializer import resolve_serializer
-from cachebind.indexes._tag import make_tag
 from cachebind.indexes.tries.base import TrieBase
 from cachebind.storage.tries._values import check_limit
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
@@ -45,7 +44,7 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
             serializer.serialize(member),
             increment=increment,
         )
-        return make_tag(self, "")
+        return self.breadcrumbs.encode(self.key, "")
 
     async def madd(
         self,
@@ -65,8 +64,8 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
             for (string, _member, score), payload in zip(entries, serialized, strict=True)
         ]
         await self.storage.madd(client, self.key, stored, increment=increment)
-        tag = make_tag(self, "")
-        return [tag] * len(entries)
+        crumb = self.breadcrumbs.encode(self.key, "")
+        return [crumb] * len(entries)
 
     async def remove(self, client: ClientType, string: str) -> None:
         """Remove the suggestion ``string``. A missing string is not an error."""

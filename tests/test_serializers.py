@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
+from uuid import UUID
 
 import pytest
 
@@ -12,6 +13,7 @@ from cachebind import (
     IntSerializer,
     NoopSerializer,
     StrSerializer,
+    UuidSerializer,
 )
 
 
@@ -48,6 +50,37 @@ def test_int_rejects_invalid_text() -> None:
         serializer.deserialize("1.5")
     with pytest.raises(ValueError):
         serializer.deserialize(True)  # type: ignore[arg-type]
+
+
+def test_uuid_round_trip() -> None:
+    serializer = UuidSerializer()
+    value = UUID("12345678-1234-5678-1234-567812345678")
+    assert serializer.serialize(value) == str(value)
+    assert serializer.deserialize(serializer.serialize(value)) == value
+
+
+def test_uuid_mserialize_round_trip() -> None:
+    serializer = UuidSerializer()
+    values = (
+        UUID("12345678-1234-5678-1234-567812345678"),
+        UUID("87654321-4321-8765-4321-876543218765"),
+    )
+    raw = serializer.mserialize(values)
+    assert serializer.mdeserialize(raw) == list(values)
+
+
+def test_uuid_rejects_non_uuid() -> None:
+    serializer = UuidSerializer()
+    with pytest.raises(ValueError):
+        serializer.serialize("12345678-1234-5678-1234-567812345678")  # type: ignore[arg-type]
+
+
+def test_uuid_rejects_invalid_text() -> None:
+    serializer = UuidSerializer()
+    with pytest.raises(ValueError):
+        serializer.deserialize("not-a-uuid")
+    with pytest.raises(ValueError):
+        serializer.deserialize(42)  # type: ignore[arg-type]
 
 
 def test_float_round_trip() -> None:

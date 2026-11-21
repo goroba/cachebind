@@ -24,7 +24,7 @@ from cachebind.storage.sets.async_storage import AsyncSetStorage
 from cachebind.storage.sets.storage import SetStorage
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
 from cachebind.storage.tries.storage import TrieStorage
-from cachebind.tagging import ColonTagMaker
+from cachebind.tagging import ColonBreadcrumbs, NoopBreadcrumbs
 
 
 class Memory:
@@ -122,6 +122,7 @@ def test_key_value_set_and_mset_tags() -> None:
         model_type=int,
         serializer=IntSerializer(),
         storage=storage,
+        breadcrumbs=NoopBreadcrumbs(),
     )
     client = Memory()
     assert index.set(client, 1, 7) == ""
@@ -134,7 +135,7 @@ def test_key_value_set_and_mset_tags() -> None:
         model_type=int,
         serializer=IntSerializer(),
         storage=MemoryStorage(),
-        tag_maker=ColonTagMaker(),
+        breadcrumbs=ColonBreadcrumbs(),
     )
     assert colon.set(client, 1, 1) == "tag_colon:1"
 
@@ -178,6 +179,7 @@ def test_set_add_tags() -> None:
         member_type=int,
         serializer=IntSerializer(),
         storage=TagSetStorage(),
+        breadcrumbs=NoopBreadcrumbs(),
     )
     client = SetMemory()
     assert index.add(client, 4) == ""
@@ -187,7 +189,7 @@ def test_set_add_tags() -> None:
 
 def test_trie_tags_and_builder() -> None:
     sig = inspect.signature(build_trie_index)
-    assert "tag_maker" not in sig.parameters
+    assert "breadcrumbs" not in sig.parameters
 
     class TagTrieStorage(TrieStorage[object, str]):
         def __init__(self) -> None:
@@ -254,15 +256,15 @@ def test_trie_tags_and_builder() -> None:
     assert index.madd(client, []) == []
 
 
-def test_builder_rejects_tag_maker_class() -> None:
-    with pytest.raises(TypeError, match="tag_maker must be an instance"):
+def test_builder_rejects_breadcrumbs_class() -> None:
+    with pytest.raises(TypeError, match="breadcrumbs must be an instance"):
         build_key_value_index(
             "bad_tag",
             id_type=int,
             model_type=int,
             serializer=IntSerializer(),
             storage=MemoryStorage(),
-            tag_maker=ColonTagMaker,  # type: ignore[arg-type]
+            breadcrumbs=ColonBreadcrumbs,  # type: ignore[arg-type]
         )
 
 
@@ -273,7 +275,7 @@ def test_async_key_value_set_tag() -> None:
         model_type=int,
         serializer=IntSerializer(),
         storage=AsyncMemoryHash(),
-        tag_maker=ColonTagMaker(),
+        breadcrumbs=ColonBreadcrumbs(),
     )
 
     async def scenario() -> None:
@@ -290,13 +292,13 @@ def test_key_value_evict_by_identifier() -> None:
         model_type=int,
         serializer=IntSerializer(),
         storage=storage,
-        tag_maker=ColonTagMaker(),
+        breadcrumbs=ColonBreadcrumbs(),
     )
     client = Memory()
     assert isinstance(index, EvictableIndex)
     index.set(client, 1, 7)
-    tag = index.set(client, 2, 8)
-    _index_name, identifier = ColonTagMaker().decode(tag)
+    crumb = index.set(client, 2, 8)
+    _index_name, identifier = ColonBreadcrumbs().decode(crumb)
     assert identifier == "2"
     index.evict(client, identifier)
     assert index.get(client, 2) is None
@@ -342,11 +344,11 @@ def test_set_evict_by_identifier() -> None:
         member_type=int,
         serializer=IntSerializer(),
         storage=TagSetStorage(),
-        tag_maker=ColonTagMaker(),
+        breadcrumbs=ColonBreadcrumbs(),
     )
     client = SetMemory()
-    tag = index.add(client, 4)
-    _index_name, identifier = ColonTagMaker().decode(tag)
+    crumb = index.add(client, 4)
+    _index_name, identifier = ColonBreadcrumbs().decode(crumb)
     assert identifier == "4"
     index.evict(client, identifier)
     assert not index.contains(client, 4)
@@ -420,11 +422,11 @@ def test_ordered_set_evict_by_identifier() -> None:
         member_type=int,
         serializer=IntSerializer(),
         storage=TagOrderedSetStorage(),
-        tag_maker=ColonTagMaker(),
+        breadcrumbs=ColonBreadcrumbs(),
     )
     client = OrderedMemory()
-    tag = index.add(client, 3, 1.0)
-    _index_name, identifier = ColonTagMaker().decode(tag)
+    crumb = index.add(client, 3, 1.0)
+    _index_name, identifier = ColonBreadcrumbs().decode(crumb)
     index.evict(client, identifier)
     assert not index.contains(client, 3)
 
@@ -532,14 +534,14 @@ def test_async_evict() -> None:
         model_type=int,
         serializer=IntSerializer(),
         storage=AsyncMemoryHash(),
-        tag_maker=ColonTagMaker(),
+        breadcrumbs=ColonBreadcrumbs(),
     )
     active = build_async_set_index(
         "async_evict_set",
         member_type=int,
         serializer=IntSerializer(),
         storage=AsyncTagSetStorage(),
-        tag_maker=ColonTagMaker(),
+        breadcrumbs=ColonBreadcrumbs(),
     )
     trie = build_async_trie_index(
         "async_evict_trie",
@@ -552,13 +554,12 @@ def test_async_evict() -> None:
         client = Memory()
         assert isinstance(kv, AsyncEvictableIndex)
         await kv.set(client, 1, 1)
-        _name, kid = ColonTagMaker().decode(await kv.set(client, 2, 2))
+        _name, kid = ColonBreadcrumbs().decode(await kv.set(client, 2, 2))
         await kv.evict(client, kid)
         assert await kv.get(client, 2) is None
 
         set_client = AsyncSetMemory()
-        tag = await active.add(set_client, 7)
-        _name, mid = ColonTagMaker().decode(tag)
+        _name, mid = ColonBreadcrumbs().decode(await active.add(set_client, 7))
         await active.evict(set_client, mid)
         assert not await active.contains(set_client, 7)
 

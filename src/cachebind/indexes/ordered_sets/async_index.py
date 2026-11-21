@@ -4,7 +4,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Hashable, Iterator, Se
 from typing import Self, cast
 
 from cachebind.indexes._serializer import resolve_serializer
-from cachebind.indexes._tag import make_tag, storage_identifier
+from cachebind.indexes._breadcrumb import storage_identifier
 from cachebind.indexes.ordered_sets.base import OrderedSetBase, _empty_range
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
@@ -33,7 +33,7 @@ class AsyncOrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         stored = serializer.serialize(member)
         await self.storage.add(client, self.key, stored, score)
-        return make_tag(self, storage_identifier(stored))
+        return self.breadcrumbs.encode(self.key, storage_identifier(stored))
 
     async def madd(
         self,
@@ -48,7 +48,9 @@ class AsyncOrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         serialized = serializer.mserialize([member for member, _score in members])
         scores = (score for _member, score in members)
         await self.storage.madd(client, self.key, list(zip(serialized, scores, strict=True)))
-        return [make_tag(self, storage_identifier(value)) for value in serialized]
+        return [
+            self.breadcrumbs.encode(self.key, storage_identifier(value)) for value in serialized
+        ]
 
     async def remove(
         self,

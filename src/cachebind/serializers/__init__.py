@@ -13,6 +13,7 @@ from cachebind.serializers.int_serializer import IntSerializer
 from cachebind.serializers.noop_serializer import NoopSerializer
 from cachebind.serializers.serializer import Serializer
 from cachebind.serializers.str_serializer import StrSerializer
+from cachebind.serializers.uuid_serializer import UuidSerializer
 
 __all__ = [
     "BoolSerializer",
@@ -24,4 +25,5 @@ __all__ = [
     "NoopSerializer",
     "Serializer",
     "StrSerializer",
+    "UuidSerializer",
 ]

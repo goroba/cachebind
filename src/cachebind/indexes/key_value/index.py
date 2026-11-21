@@ -4,7 +4,6 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import Self
 
 from cachebind.indexes._serializer import resolve_serializer
-from cachebind.indexes._tag import make_tag
 from cachebind.indexes.key_value.base import KeyValueBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.key_value.storage import KeyValueStorage
@@ -44,11 +43,11 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         ttl: int | None = None,
         **kwargs,
     ) -> str:
-        """Store ``value`` under ``id``. Returns a cache tag for ``id``."""
+        """Store ``value`` under ``id``. Returns the breadcrumb for ``id``."""
         serializer = resolve_serializer(self.serializer, kwargs)
         field = str(id)
         self.storage.set(client, self.key, field, serializer.serialize(value), ttl=ttl)
-        return make_tag(self, field)
+        return self.breadcrumbs.encode(self.key, field)
 
     def delete(self, client: ClientType, id: IdType) -> None:
         """Remove ``id``. A missing id is not an error."""
@@ -94,7 +93,7 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         ttl: int | None = None,
         **kwargs,
     ) -> list[str]:
-        """Store every item. ``ttl`` applies to each id. Returns one tag per item."""
+        """Store every item. ``ttl`` applies to each id. Returns one breadcrumb per item."""
         if not items:
             return []
         serializer = resolve_serializer(self.serializer, kwargs)
@@ -102,7 +101,7 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         values = serializer.mserialize(list(items.values()))
         mapping = dict(zip(fields, values, strict=True))
         self.storage.mset(client, self.key, mapping, ttl=ttl)
-        return [make_tag(self, field) for field in fields]
+        return [self.breadcrumbs.encode(self.key, field) for field in fields]
 
     def swap(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""

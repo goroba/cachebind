@@ -4,7 +4,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Hashable, Sequence
 from typing import Self, cast
 
 from cachebind.indexes._serializer import resolve_serializer
-from cachebind.indexes._tag import make_tag, storage_identifier
+from cachebind.indexes._breadcrumb import storage_identifier
 from cachebind.indexes.sets.base import SetBase
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.sets.async_storage import AsyncSetStorage
@@ -32,7 +32,7 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         stored = serializer.serialize(member)
         await self.storage.add(client, self.key, stored)
-        return make_tag(self, storage_identifier(stored))
+        return self.breadcrumbs.encode(self.key, storage_identifier(stored))
 
     async def madd(
         self,
@@ -46,7 +46,9 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         stored = serializer.mserialize(members)
         await self.storage.madd(client, self.key, stored)
-        return [make_tag(self, storage_identifier(value)) for value in stored]
+        return [
+            self.breadcrumbs.encode(self.key, storage_identifier(value)) for value in stored
+        ]
 
     async def remove(
         self,
