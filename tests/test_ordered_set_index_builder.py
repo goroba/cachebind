@@ -7,9 +7,14 @@ from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
 
 from cachebind import (
+    AsyncIterableIndex,
     AsyncOrderedSetIndex,
+    AsyncSnapshotableIndex,
+    DroppableIndex,
     IntSerializer,
+    IterableIndex,
     OrderedSetIndex,
+    SnapshotableIndex,
     build_async_key_value_index,
     build_async_ordered_set_index,
     build_async_set_index,
@@ -427,7 +432,7 @@ def test_async_empty_ordered_set_batches_do_not_call_storage() -> None:
     assert storage.called is False
 
 
-def test_ordered_set_index_swap_detaches_data() -> None:
+def test_ordered_set_index_snapshot_detaches_data() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_ordered_set_index(
         "swap_leaderboard",
@@ -435,9 +440,12 @@ def test_ordered_set_index_swap_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=RedisOrderedSetStorage(),
     )
+    assert isinstance(index, SnapshotableIndex)
+    assert isinstance(index, DroppableIndex)
+    assert isinstance(index, IterableIndex)
     index.add(client, 2, 2.0)
     index.add(client, 1, 1.0)
-    snapshot = index.swap(client)
+    snapshot = index.snapshot(client)
     registry = get_registry(Redis)
     assert registry.get("swap_leaderboard") is index
     assert snapshot is not index
@@ -461,7 +469,7 @@ def test_ordered_set_index_swap_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=RedisOrderedSetStorage(),
     )
-    empty = missing.swap(client)
+    empty = missing.snapshot(client)
     assert registry.get("swap_leaderboard_missing") is missing
     assert empty.key not in registry
     assert missing.score(client, 1) is None
@@ -472,7 +480,7 @@ def test_ordered_set_index_swap_detaches_data() -> None:
     empty.drop(client)
 
 
-def test_async_ordered_set_index_swap_detaches_data() -> None:
+def test_async_ordered_set_index_snapshot_detaches_data() -> None:
     async def scenario() -> None:
         client = fakeredis.FakeAsyncRedis(decode_responses=True)
         index = build_async_ordered_set_index(
@@ -481,10 +489,11 @@ def test_async_ordered_set_index_swap_detaches_data() -> None:
             serializer=IntSerializer(),
             storage=AsyncRedisOrderedSetStorage(),
         )
+        assert isinstance(index, AsyncSnapshotableIndex)
         try:
             await index.add(client, 2, 2.0)
             await index.add(client, 1, 1.0)
-            snapshot = await index.swap(client)
+            snapshot = await index.snapshot(client)
             registry = get_registry(AsyncRedis)
             assert registry.get("async_swap_leaderboard") is index
             assert snapshot is not index
@@ -507,7 +516,7 @@ def test_async_ordered_set_index_swap_detaches_data() -> None:
                 serializer=IntSerializer(),
                 storage=AsyncRedisOrderedSetStorage(),
             )
-            empty = await missing.swap(client)
+            empty = await missing.snapshot(client)
             assert registry.get("async_swap_leaderboard_missing") is missing
             assert await missing.score(client, 1) is None
             assert await empty.score(client, 1) is None

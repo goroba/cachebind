@@ -104,7 +104,7 @@ class TrieIndex[ClientType, MemberType, StorageType: Hashable](
         """Return the number of suggestion strings in the trie."""
         return self.storage.length(client, self.key)
 
-    def swap(self, client: ClientType) -> Self:
+    def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(self.storage.swap(client, self.key))
 

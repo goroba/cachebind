@@ -89,7 +89,7 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         return self.storage.contains(client, self.key, serializer.serialize(member))
 
-    def swap(self, client: ClientType) -> Self:
+    def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(self.storage.swap(client, self.key))
 

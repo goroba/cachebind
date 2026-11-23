@@ -11,10 +11,16 @@ from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
 
 from cachebind import (
+    AsyncDroppableIndex,
+    AsyncIterableIndex,
     AsyncKeyValueIndex,
+    AsyncSnapshotableIndex,
     DictSerializer,
+    DroppableIndex,
     IntSerializer,
+    IterableIndex,
     KeyValueIndex,
+    SnapshotableIndex,
     build_async_key_value_index,
     build_key_value_index,
     get_registry,
@@ -438,7 +444,7 @@ def test_dict_alias_matches_dict_serializer() -> None:
     assert isinstance(index.serializer, DictSerializer)
 
 
-def test_hash_index_swap_detaches_data() -> None:
+def test_hash_index_snapshot_detaches_data() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_key_value_index(
         "swap_hash_users",
@@ -447,8 +453,11 @@ def test_hash_index_swap_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=RedisHashStorage(),
     )
+    assert isinstance(index, SnapshotableIndex)
+    assert isinstance(index, DroppableIndex)
+    assert isinstance(index, IterableIndex)
     index.set(client, 1, 10)
-    snapshot = index.swap(client)
+    snapshot = index.snapshot(client)
     registry = get_registry(Redis)
     assert registry.get("swap_hash_users") is index
     assert snapshot is not index
@@ -466,7 +475,7 @@ def test_hash_index_swap_detaches_data() -> None:
     assert snapshot.get(client, 1) is None
 
 
-def test_hash_index_swap_of_missing_key() -> None:
+def test_hash_index_snapshot_of_missing_key() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_key_value_index(
         "swap_hash_missing",
@@ -475,7 +484,7 @@ def test_hash_index_swap_of_missing_key() -> None:
         serializer=IntSerializer(),
         storage=RedisHashStorage(),
     )
-    snapshot = index.swap(client)
+    snapshot = index.snapshot(client)
     assert get_registry(Redis).get("swap_hash_missing") is index
     assert snapshot.key not in get_registry(Redis)
     assert index.get(client, 1) is None
@@ -486,7 +495,7 @@ def test_hash_index_swap_of_missing_key() -> None:
     snapshot.drop(client)
 
 
-def test_async_hash_index_swap_detaches_data() -> None:
+def test_async_hash_index_snapshot_detaches_data() -> None:
     async def scenario() -> None:
         client = fakeredis.FakeAsyncRedis(decode_responses=True)
         index = build_async_key_value_index(
@@ -496,9 +505,12 @@ def test_async_hash_index_swap_detaches_data() -> None:
             serializer=IntSerializer(),
             storage=AsyncRedisHashStorage(),
         )
+        assert isinstance(index, AsyncSnapshotableIndex)
+        assert isinstance(index, AsyncDroppableIndex)
+        assert isinstance(index, AsyncIterableIndex)
         try:
             await index.set(client, 1, 10)
-            snapshot = await index.swap(client)
+            snapshot = await index.snapshot(client)
             registry = get_registry(AsyncRedis)
             assert registry.get("async_swap_hash_users") is index
             assert snapshot is not index
@@ -521,7 +533,7 @@ def test_async_hash_index_swap_detaches_data() -> None:
                 serializer=IntSerializer(),
                 storage=AsyncRedisHashStorage(),
             )
-            empty = await missing.swap(client)
+            empty = await missing.snapshot(client)
             assert registry.get("async_swap_hash_missing") is missing
             assert empty.key not in registry
             assert await missing.get(client, 1) is None
@@ -536,7 +548,7 @@ def test_async_hash_index_swap_detaches_data() -> None:
     asyncio.run(scenario())
 
 
-def test_string_index_swap_is_rejected() -> None:
+def test_string_index_snapshot_is_rejected() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_key_value_index(
         "swap_string_users",
@@ -546,7 +558,7 @@ def test_string_index_swap_is_rejected() -> None:
         storage=RedisStringStorage(),
     )
     with pytest.raises(NotImplementedError):
-        index.swap(client)
+        index.snapshot(client)
     with pytest.raises(NotImplementedError):
         index.drop(client)
     with pytest.raises(NotImplementedError):
@@ -554,7 +566,7 @@ def test_string_index_swap_is_rejected() -> None:
     assert get_registry(Redis).get("swap_string_users") is index
 
 
-def test_async_string_index_swap_is_rejected() -> None:
+def test_async_string_index_snapshot_is_rejected() -> None:
     async def scenario() -> None:
         client = fakeredis.FakeAsyncRedis(decode_responses=True)
         index = build_async_key_value_index(
@@ -566,7 +578,7 @@ def test_async_string_index_swap_is_rejected() -> None:
         )
         try:
             with pytest.raises(NotImplementedError):
-                await index.swap(client)
+                await index.snapshot(client)
             with pytest.raises(NotImplementedError):
                 await index.drop(client)
             with pytest.raises(NotImplementedError):

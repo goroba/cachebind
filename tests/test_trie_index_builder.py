@@ -7,8 +7,13 @@ from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
 
 from cachebind import (
+    AsyncDroppableIndex,
+    AsyncSnapshotableIndex,
     AsyncTrieIndex,
+    DroppableIndex,
     IntSerializer,
+    IterableIndex,
+    SnapshotableIndex,
     TrieIndex,
     build_async_ordered_set_index,
     build_async_trie_index,
@@ -503,7 +508,7 @@ def test_async_empty_trie_batches_do_not_call_storage() -> None:
     assert storage.data.calls == []
 
 
-def test_trie_index_swap_detaches_data() -> None:
+def test_trie_index_snapshot_detaches_data() -> None:
     client = Spy()
     index = build_trie_index(
         "swap_cities",
@@ -511,9 +516,12 @@ def test_trie_index_swap_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=MemoryTrie(),
     )
+    assert isinstance(index, SnapshotableIndex)
+    assert isinstance(index, DroppableIndex)
+    assert not isinstance(index, IterableIndex)
     index.add(client, "Paris", 1, 900.0)
     index.add(client, "Lyon", 4, 400.0)
-    snapshot = index.swap(client)
+    snapshot = index.snapshot(client)
     registry = get_registry(Spy)
     assert registry.get("swap_cities") is index
     assert snapshot is not index
@@ -535,7 +543,7 @@ def test_trie_index_swap_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=MemoryTrie(),
     )
-    empty = missing.swap(client)
+    empty = missing.snapshot(client)
     assert empty.key not in registry
     assert missing.length(client) == 0
     assert empty.length(client) == 0
@@ -543,7 +551,7 @@ def test_trie_index_swap_detaches_data() -> None:
     empty.drop(client)
 
 
-def test_async_trie_index_swap_detaches_data() -> None:
+def test_async_trie_index_snapshot_detaches_data() -> None:
     async def scenario() -> None:
         client = AsyncSpy()
         index = build_async_trie_index(
@@ -552,8 +560,11 @@ def test_async_trie_index_swap_detaches_data() -> None:
             serializer=IntSerializer(),
             storage=AsyncMemoryTrie(),
         )
+        assert isinstance(index, AsyncSnapshotableIndex)
+        assert isinstance(index, AsyncDroppableIndex)
+        assert not isinstance(index, IterableIndex)
         await index.add(client, "Paris", 1, 900.0)
-        snapshot = await index.swap(client)
+        snapshot = await index.snapshot(client)
         registry = get_registry(AsyncSpy)
         assert registry.get("async_swap_cities") is index
         assert snapshot.key not in registry

@@ -4,7 +4,7 @@ An application can collect small writes in the cache and copy them to the databa
 
 Last visit is a typical case. Each time a user opens the app, store the time. A later job reads those times and saves them.
 
-The job must not lose a visit that arrives while it is saving, and it must not delete a visit that has not been saved yet. `swap`, `iter`, and `drop` do that.
+The job must not lose a visit that arrives while it is saving, and it must not delete a visit that has not been saved yet. `snapshot`, `iter`, and `drop` do that.
 
 ## Collect
 
@@ -38,14 +38,14 @@ await last_visits.set(client, user_id, datetime.now(timezone.utc))
 
 ## Flush
 
-`swap` moves the collected times aside and returns a snapshot. `last_visits` stays registered and is empty. Visits that arrive after the swap go there, and they are not part of this flush.
+`snapshot` moves the collected times aside and returns an unregistered index for that data. `last_visits` stays registered and is empty. Visits that arrive after the snapshot go there, and they are not part of this flush.
 
 Walk the snapshot and save each time. The id comes back as text, which is how it was stored, so turn it back into a `UUID`. Drop the snapshot only after the saves have succeeded.
 
 ```python
 from uuid import UUID
 
-snapshot = await last_visits.swap(client)
+snapshot = await last_visits.snapshot(client)
 async for user_id, visited_at in snapshot.iter(client):
     await save_last_visit(UUID(user_id), visited_at)
 await snapshot.drop(client)
@@ -57,4 +57,4 @@ If a save fails, do not drop the snapshot. The times are still there, so the sam
 
 `drop` deletes only the snapshot. It does not touch `last_visits`, and it does not change the registry.
 
-A string storage cannot do this. It keeps a separate Redis key for each id, so `swap`, `iter`, and `drop` raise `NotImplementedError`.
+A string storage cannot do this. It keeps a separate Redis key for each id, so `snapshot`, `iter`, and `drop` raise `NotImplementedError`.

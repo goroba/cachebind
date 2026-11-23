@@ -179,7 +179,7 @@ class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
         members = serializer.mdeserialize([member for member, _score in raw])
         return list(zip(members, (score for _member, score in raw), strict=True))
 
-    def swap(self, client: ClientType) -> Self:
+    def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(self.storage.swap(client, self.key))
 

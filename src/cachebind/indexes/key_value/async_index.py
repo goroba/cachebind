@@ -103,7 +103,7 @@ class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         await self.storage.mset(client, self.key, mapping, ttl=ttl)
         return [self.breadcrumbs.encode(self.key, field) for field in fields]
 
-    async def swap(self, client: ClientType) -> Self:
+    async def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(await self.storage.swap(client, self.key))
 

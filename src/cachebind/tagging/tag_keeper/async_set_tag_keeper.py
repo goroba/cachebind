@@ -2,7 +2,7 @@
 
 from cachebind.indexes._builder import storage_client_type
 from cachebind.indexes.base import get_registry
-from cachebind.indexes.evict import AsyncEvictableIndex
+from cachebind.indexes.evictable import AsyncEvictableIndex
 from cachebind.storage.sets.async_storage import AsyncSetStorage
 from cachebind.tagging.breadcrumbs.colon_breadcrumbs import ColonBreadcrumbs
 from cachebind.tagging.breadcrumbs.protocol import Breadcrumbs
