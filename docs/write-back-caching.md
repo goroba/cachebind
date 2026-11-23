@@ -38,22 +38,21 @@ await last_visits.set(client, user_id, datetime.now(timezone.utc))
 
 ## Flush
 
-`snapshot` moves the collected times aside and returns an unregistered index for that data. `last_visits` stays registered and is empty. Visits that arrive after the snapshot go there, and they are not part of this flush.
+`snapshot` is a context manager. On enter it moves the collected times aside and yields an unregistered index for that data. `last_visits` stays registered and is empty. Visits that arrive after the snapshot go there, and they are not part of this flush.
 
-Walk the snapshot and save each time. The id comes back as text, which is how it was stored, so turn it back into a `UUID`. Drop the snapshot only after the saves have succeeded.
+Walk the snapshot and save each time. The id comes back as text, which is how it was stored, so turn it back into a `UUID`. On a successful flush, leaving the block drops the snapshot.
 
 ```python
 from uuid import UUID
 
-snapshot = await last_visits.snapshot(client)
-async for user_id, visited_at in snapshot.iter(client):
-    await save_last_visit(UUID(user_id), visited_at)
-await snapshot.drop(client)
+async with last_visits.snapshot(client) as snapshot:
+    async for user_id, visited_at in snapshot.iter(client):
+        await save_last_visit(UUID(user_id), visited_at)
 ```
 
 `save_last_visit` writes one user to the database. Writing the same user again is safe when the database keeps the later time.
 
-If a save fails, do not drop the snapshot. The times are still there, so the same loop can run again. Visits already saved can be saved once more.
+If a save fails inside the block, the context manager does not drop the snapshot. The `snapshot` binding from the `as` clause still refers to that data, so you can retry the loop or call `await snapshot.drop(client)` when you are done.
 
 `drop` deletes only the snapshot. It does not touch `last_visits`, and it does not change the registry.
 

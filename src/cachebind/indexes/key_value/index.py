@@ -4,7 +4,7 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Self
 
-from cachebind.indexes._replace import replace_context
+from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.key_value.base import KeyValueBase
 from cachebind.serializers.serializer import Serializer
@@ -105,9 +105,11 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         self.storage.mset(client, self.key, mapping, ttl=ttl)
         return [self.breadcrumbs.encode(self.key, field) for field in fields]
 
-    def snapshot(self, client: ClientType) -> Self:
-        """Rename this index aside and return an unregistered index for that data."""
-        return self.detach(self.storage.snapshot(client, self.key))
+    @contextmanager
+    def snapshot(self, client: ClientType):
+        """Yield an unregistered index for the data that was live on enter; drop it on success."""
+        with snapshot_context(self, client) as detached:
+            yield detached
 
     @contextmanager
     def replace(self, client: ClientType):

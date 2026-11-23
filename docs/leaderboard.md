@@ -185,7 +185,7 @@ A batch job can rebuild the whole board from Postgres without serving a half-fil
 
 On success, staging is renamed onto `leaderboard` atomically. On failure, only the staging key is dropped; the live board is unchanged. An empty staging block clears the live key.
 
-`snapshot` does the opposite move: it renames the live key aside for a flush. See [Write-Back Caching example](write-back-caching.md).
+`snapshot` does the opposite move: use it as a context manager to rename the live key aside for a flush. See [Write-Back Caching example](write-back-caching.md).
 
 While the job runs, `leaderboard.add` still updates the old board. Those writes disappear when the rebuild publishes unless you merge them at the application layer.
 

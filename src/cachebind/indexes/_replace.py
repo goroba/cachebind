@@ -1,4 +1,4 @@
-"""Shared replace context manager for snapshot-capable indexes."""
+"""Shared replace and snapshot context managers for snapshot-capable indexes."""
 
 from __future__ import annotations
 
@@ -16,10 +16,29 @@ def staging_key(live_key: str) -> str:
     return f"{live_key}:replace:{uuid4().hex}"
 
 
-def _assert_replaceable_sync(index: Index, client: object) -> None:
-    probe = f"{index.key}:replaceable:{uuid4().hex}"
+def _assert_snapshot_capable_sync(index: Index, client: object) -> None:
+    probe = f"{index.key}:snapshot_capable:{uuid4().hex}"
     try:
         index.storage.snapshot(client, probe)
+    except NotImplementedError as exc:
+        raise NotImplementedError(
+            f"{type(index.storage).__name__} cannot snapshot a single-key index"
+        ) from exc
+
+
+async def _assert_snapshot_capable_async(index: Index, client: object) -> None:
+    probe = f"{index.key}:snapshot_capable:{uuid4().hex}"
+    try:
+        await index.storage.snapshot(client, probe)
+    except NotImplementedError as exc:
+        raise NotImplementedError(
+            f"{type(index.storage).__name__} cannot snapshot a single-key index"
+        ) from exc
+
+
+def _assert_replaceable_sync(index: Index, client: object) -> None:
+    try:
+        _assert_snapshot_capable_sync(index, client)
     except NotImplementedError as exc:
         raise NotImplementedError(
             f"{type(index.storage).__name__} cannot replace a single-key index"
@@ -27,9 +46,8 @@ def _assert_replaceable_sync(index: Index, client: object) -> None:
 
 
 async def _assert_replaceable_async(index: Index, client: object) -> None:
-    probe = f"{index.key}:replaceable:{uuid4().hex}"
     try:
-        await index.storage.snapshot(client, probe)
+        await _assert_snapshot_capable_async(index, client)
     except NotImplementedError as exc:
         raise NotImplementedError(
             f"{type(index.storage).__name__} cannot replace a single-key index"
@@ -94,3 +112,28 @@ async def async_replace_context(index: Index, client: object):
         raise
     else:
         await _commit_async(index, client, staging)
+
+
+@contextmanager
+def snapshot_context(index: Index, client: object):
+    _assert_snapshot_capable_sync(index, client)
+    snapshot = index.detach(index.storage.snapshot(client, index.key))
+    try:
+        yield snapshot
+    except BaseException:
+        raise
+    else:
+        snapshot.drop(client)
+
+
+@asynccontextmanager
+async def async_snapshot_context(index: Index, client: object):
+    await _assert_snapshot_capable_async(index, client)
+    swapped = await index.storage.snapshot(client, index.key)
+    snapshot = index.detach(swapped)
+    try:
+        yield snapshot
+    except BaseException:
+        raise
+    else:
+        await snapshot.drop(client)

@@ -4,7 +4,7 @@ from collections.abc import Hashable, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from typing import Self, cast
 
-from cachebind.indexes._replace import replace_context
+from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
 from cachebind.indexes.sets.base import SetBase
@@ -91,9 +91,11 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         return self.storage.contains(client, self.key, serializer.serialize(member))
 
-    def snapshot(self, client: ClientType) -> Self:
-        """Rename this index aside and return an unregistered index for that data."""
-        return self.detach(self.storage.snapshot(client, self.key))
+    @contextmanager
+    def snapshot(self, client: ClientType):
+        """Yield an unregistered index for the data that was live on enter; drop it on success."""
+        with snapshot_context(self, client) as detached:
+            yield detached
 
     @contextmanager
     def replace(self, client: ClientType):

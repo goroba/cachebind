@@ -4,7 +4,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Hashable, Sequence
 from contextlib import asynccontextmanager
 from typing import Self, cast
 
-from cachebind.indexes._replace import async_replace_context
+from cachebind.indexes._replace import async_replace_context, async_snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
 from cachebind.indexes.sets.base import SetBase
@@ -91,9 +91,11 @@ class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
         serializer = resolve_serializer(self.serializer, kwargs)
         return await self.storage.contains(client, self.key, serializer.serialize(member))
 
-    async def snapshot(self, client: ClientType) -> Self:
-        """Rename this index aside and return an unregistered index for that data."""
-        return self.detach(await self.storage.snapshot(client, self.key))
+    @asynccontextmanager
+    async def snapshot(self, client: ClientType):
+        """Yield an unregistered index for the data that was live on enter; drop it on success."""
+        async with async_snapshot_context(self, client) as detached:
+            yield detached
 
     @asynccontextmanager
     async def replace(self, client: ClientType):

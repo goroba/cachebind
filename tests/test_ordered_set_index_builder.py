@@ -447,20 +447,19 @@ def test_ordered_set_index_snapshot_detaches_data() -> None:
     assert isinstance(index, IterableIndex)
     index.add(client, 2, 2.0)
     index.add(client, 1, 1.0)
-    snapshot = index.snapshot(client)
-    registry = get_registry(Redis)
-    assert registry.get("swap_leaderboard") is index
-    assert snapshot is not index
-    assert snapshot.key.startswith("swap_leaderboard:swap:")
-    assert snapshot.key not in registry
-    assert index.score(client, 1) is None
-    assert snapshot.score(client, 1) == 1.0
-    assert list(snapshot.iter(client)) == [(1, 1.0), (2, 2.0)]
-    index.add(client, 3, 3.0)
-    assert index.score(client, 3) == 3.0
-    assert snapshot.score(client, 3) is None
-    assert list(snapshot.iter(client)) == [(1, 1.0), (2, 2.0)]
-    snapshot.drop(client)
+    with index.snapshot(client) as snapshot:
+        registry = get_registry(Redis)
+        assert registry.get("swap_leaderboard") is index
+        assert snapshot is not index
+        assert snapshot.key.startswith("swap_leaderboard:swap:")
+        assert snapshot.key not in registry
+        assert index.score(client, 1) is None
+        assert snapshot.score(client, 1) == 1.0
+        assert list(snapshot.iter(client)) == [(1, 1.0), (2, 2.0)]
+        index.add(client, 3, 3.0)
+        assert index.score(client, 3) == 3.0
+        assert snapshot.score(client, 3) is None
+        assert list(snapshot.iter(client)) == [(1, 1.0), (2, 2.0)]
     assert registry.get("swap_leaderboard") is index
     assert index.score(client, 3) == 3.0
     assert snapshot.score(client, 1) is None
@@ -471,15 +470,14 @@ def test_ordered_set_index_snapshot_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=RedisOrderedSetStorage(),
     )
-    empty = missing.snapshot(client)
-    assert registry.get("swap_leaderboard_missing") is missing
-    assert empty.key not in registry
-    assert missing.score(client, 1) is None
-    assert empty.score(client, 1) is None
-    assert list(missing.iter(client)) == []
-    assert list(empty.iter(client)) == []
+    with missing.snapshot(client) as empty:
+        assert registry.get("swap_leaderboard_missing") is missing
+        assert empty.key not in registry
+        assert missing.score(client, 1) is None
+        assert empty.score(client, 1) is None
+        assert list(missing.iter(client)) == []
+        assert list(empty.iter(client)) == []
     missing.drop(client)
-    empty.drop(client)
 
 
 def test_async_ordered_set_index_snapshot_detaches_data() -> None:
@@ -495,19 +493,18 @@ def test_async_ordered_set_index_snapshot_detaches_data() -> None:
         try:
             await index.add(client, 2, 2.0)
             await index.add(client, 1, 1.0)
-            snapshot = await index.snapshot(client)
-            registry = get_registry(AsyncRedis)
-            assert registry.get("async_swap_leaderboard") is index
-            assert snapshot is not index
-            assert snapshot.key not in registry
-            assert await index.score(client, 1) is None
-            assert await snapshot.score(client, 1) == 1.0
-            assert [item async for item in snapshot.iter(client)] == [(1, 1.0), (2, 2.0)]
-            await index.add(client, 3, 3.0)
-            assert await index.score(client, 3) == 3.0
-            assert await snapshot.score(client, 3) is None
-            assert [item async for item in snapshot.iter(client)] == [(1, 1.0), (2, 2.0)]
-            await snapshot.drop(client)
+            async with index.snapshot(client) as snapshot:
+                registry = get_registry(AsyncRedis)
+                assert registry.get("async_swap_leaderboard") is index
+                assert snapshot is not index
+                assert snapshot.key not in registry
+                assert await index.score(client, 1) is None
+                assert await snapshot.score(client, 1) == 1.0
+                assert [item async for item in snapshot.iter(client)] == [(1, 1.0), (2, 2.0)]
+                await index.add(client, 3, 3.0)
+                assert await index.score(client, 3) == 3.0
+                assert await snapshot.score(client, 3) is None
+                assert [item async for item in snapshot.iter(client)] == [(1, 1.0), (2, 2.0)]
             assert registry.get("async_swap_leaderboard") is index
             assert await index.score(client, 3) == 3.0
             assert await snapshot.score(client, 1) is None
@@ -518,14 +515,13 @@ def test_async_ordered_set_index_snapshot_detaches_data() -> None:
                 serializer=IntSerializer(),
                 storage=AsyncRedisOrderedSetStorage(),
             )
-            empty = await missing.snapshot(client)
-            assert registry.get("async_swap_leaderboard_missing") is missing
-            assert await missing.score(client, 1) is None
-            assert await empty.score(client, 1) is None
-            assert [item async for item in missing.iter(client)] == []
-            assert [item async for item in empty.iter(client)] == []
+            async with missing.snapshot(client) as empty:
+                assert registry.get("async_swap_leaderboard_missing") is missing
+                assert await missing.score(client, 1) is None
+                assert await empty.score(client, 1) is None
+                assert [item async for item in missing.iter(client)] == []
+                assert [item async for item in empty.iter(client)] == []
             await missing.drop(client)
-            await empty.drop(client)
         finally:
             await client.aclose()
 

@@ -305,19 +305,18 @@ def test_set_index_snapshot_detaches_data() -> None:
     assert isinstance(index, DroppableIndex)
     assert isinstance(index, IterableIndex)
     index.add(client, 1)
-    snapshot = index.snapshot(client)
-    registry = get_registry(Redis)
-    assert registry.get("swap_active_users") is index
-    assert snapshot is not index
-    assert snapshot.key.startswith("swap_active_users:swap:")
-    assert snapshot.key not in registry
-    assert index.contains(client, 1) is False
-    assert snapshot.contains(client, 1) is True
-    index.add(client, 2)
-    assert index.contains(client, 2) is True
-    assert snapshot.contains(client, 2) is False
-    assert set(snapshot.iter(client)) == {1}
-    snapshot.drop(client)
+    with index.snapshot(client) as snapshot:
+        registry = get_registry(Redis)
+        assert registry.get("swap_active_users") is index
+        assert snapshot is not index
+        assert snapshot.key.startswith("swap_active_users:swap:")
+        assert snapshot.key not in registry
+        assert index.contains(client, 1) is False
+        assert snapshot.contains(client, 1) is True
+        index.add(client, 2)
+        assert index.contains(client, 2) is True
+        assert snapshot.contains(client, 2) is False
+        assert set(snapshot.iter(client)) == {1}
     assert registry.get("swap_active_users") is index
     assert index.contains(client, 2) is True
     assert snapshot.contains(client, 1) is False
@@ -328,15 +327,14 @@ def test_set_index_snapshot_detaches_data() -> None:
         serializer=IntSerializer(),
         storage=RedisSetStorage(),
     )
-    empty = missing.snapshot(client)
-    assert registry.get("swap_active_missing") is missing
-    assert empty.key not in registry
-    assert missing.contains(client, 1) is False
-    assert empty.contains(client, 1) is False
-    assert list(missing.iter(client)) == []
-    assert list(empty.iter(client)) == []
+    with missing.snapshot(client) as empty:
+        assert registry.get("swap_active_missing") is missing
+        assert empty.key not in registry
+        assert missing.contains(client, 1) is False
+        assert empty.contains(client, 1) is False
+        assert list(missing.iter(client)) == []
+        assert list(empty.iter(client)) == []
     missing.drop(client)
-    empty.drop(client)
 
 
 def test_async_set_index_snapshot_detaches_data() -> None:
@@ -351,18 +349,17 @@ def test_async_set_index_snapshot_detaches_data() -> None:
         assert isinstance(index, AsyncSnapshotableIndex)
         try:
             await index.add(client, 1)
-            snapshot = await index.snapshot(client)
-            registry = get_registry(AsyncRedis)
-            assert registry.get("async_swap_active_users") is index
-            assert snapshot is not index
-            assert snapshot.key not in registry
-            assert await index.contains(client, 1) is False
-            assert await snapshot.contains(client, 1) is True
-            await index.add(client, 2)
-            assert await index.contains(client, 2) is True
-            assert await snapshot.contains(client, 2) is False
-            assert {member async for member in snapshot.iter(client)} == {1}
-            await snapshot.drop(client)
+            async with index.snapshot(client) as snapshot:
+                registry = get_registry(AsyncRedis)
+                assert registry.get("async_swap_active_users") is index
+                assert snapshot is not index
+                assert snapshot.key not in registry
+                assert await index.contains(client, 1) is False
+                assert await snapshot.contains(client, 1) is True
+                await index.add(client, 2)
+                assert await index.contains(client, 2) is True
+                assert await snapshot.contains(client, 2) is False
+                assert {member async for member in snapshot.iter(client)} == {1}
             assert registry.get("async_swap_active_users") is index
             assert await index.contains(client, 2) is True
             assert await snapshot.contains(client, 1) is False
@@ -373,14 +370,13 @@ def test_async_set_index_snapshot_detaches_data() -> None:
                 serializer=IntSerializer(),
                 storage=AsyncRedisSetStorage(),
             )
-            empty = await missing.snapshot(client)
-            assert registry.get("async_swap_active_missing") is missing
-            assert await missing.contains(client, 1) is False
-            assert await empty.contains(client, 1) is False
-            assert [member async for member in missing.iter(client)] == []
-            assert [member async for member in empty.iter(client)] == []
+            async with missing.snapshot(client) as empty:
+                assert registry.get("async_swap_active_missing") is missing
+                assert await missing.contains(client, 1) is False
+                assert await empty.contains(client, 1) is False
+                assert [member async for member in missing.iter(client)] == []
+                assert [member async for member in empty.iter(client)] == []
             await missing.drop(client)
-            await empty.drop(client)
         finally:
             await client.aclose()
 

@@ -4,7 +4,7 @@ from collections.abc import Hashable, Sequence
 from contextlib import contextmanager
 from typing import Self
 
-from cachebind.indexes._replace import replace_context
+from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.tries.base import TrieBase
 from cachebind.storage.tries._values import check_limit
@@ -106,9 +106,11 @@ class TrieIndex[ClientType, MemberType, StorageType: Hashable](
         """Return the number of suggestion strings in the trie."""
         return self.storage.length(client, self.key)
 
-    def snapshot(self, client: ClientType) -> Self:
-        """Rename this index aside and return an unregistered index for that data."""
-        return self.detach(self.storage.snapshot(client, self.key))
+    @contextmanager
+    def snapshot(self, client: ClientType):
+        """Yield an unregistered index for the data that was live on enter; drop it on success."""
+        with snapshot_context(self, client) as detached:
+            yield detached
 
     @contextmanager
     def replace(self, client: ClientType):
