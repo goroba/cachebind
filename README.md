@@ -6,6 +6,8 @@ A Python library that names a cache binding — one storage key, a serializer, a
 
 **What can an index store?** A key-value index stores one model per id. A set index stores members in one set. An ordered set index stores members with scores, lowest score first. A trie index stores suggestion strings with scores and keeps each member as the payload. `search` returns those members in rank order. Each has a sync builder and an async builder.
 
+**Repository:** [github.com/goroba/cachebind](https://github.com/goroba/cachebind)
+
 ## Indexes
 
 Build an index once with `build_async_key_value_index`, `build_async_set_index`, `build_async_ordered_set_index`, or `build_async_trie_index`. Pass a key, the value type, a serializer instance, and a storage instance. Optionally pass `breadcrumbs` (default `ColonBreadcrumbs`) on key-value, set, and ordered-set builders. Trie indexes always use `NoopBreadcrumbs` and do not accept `breadcrumbs`. Then pass a storage client into every call.
@@ -135,9 +137,9 @@ Runtime dependencies live in `pyproject.toml` under `[project] dependencies`. Op
 pytest
 ```
 
-## Documentation
+## Recipes
 
-- [Leaderboard](docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres
-- [Tag-Based Caching](docs/tag-based-caching.md) — bind key-value user cache and leaderboard entry under `user:{id}`, evict together on delete
-- [Trie (Prefix Tree)](docs/trie.md) — city names in a Redis Search trie, with cities loaded from Postgres on search
-- [Write-Back Caching example](docs/write-back-caching.md) — collect last-visit times, then save them to the database
+- [Leaderboard](https://github.com/goroba/cachebind/blob/main/docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres
+- [Tag-Based Caching](https://github.com/goroba/cachebind/blob/main/docs/tag-based-caching.md) — bind key-value user cache and leaderboard entry under `user:{id}`, evict together on delete
+- [Trie (Prefix Tree)](https://github.com/goroba/cachebind/blob/main/docs/trie.md) — city names in a Redis Search trie, with cities loaded from Postgres on search
+- [Write-Back Caching example](https://github.com/goroba/cachebind/blob/main/docs/write-back-caching.md) — collect last-visit times, then save them to the database
