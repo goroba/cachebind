@@ -68,15 +68,3 @@ class AsyncTrieStorage[ClientType, PayloadType: Hashable](Protocol):
     async def length(self, client: ClientType, name: str) -> int:
         """Return the number of suggestion strings in the trie."""
         ...
-
-    async def swap(self, client: ClientType, name: str) -> str:
-        """Rename ``name`` aside and return the new name. A missing name still returns one."""
-        ...
-
-    async def replace(self, client: ClientType, source: str, dest: str) -> None:
-        """Rename ``source`` onto ``dest``. ``dest`` is overwritten atomically."""
-        ...
-
-    async def drop(self, client: ClientType, name: str) -> None:
-        """Delete ``name``. A missing name is not an error."""
-        ...

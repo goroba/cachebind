@@ -108,7 +108,7 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
 
     async def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
-        return self.detach(await self.storage.swap(client, self.key))
+        return self.detach(await self.storage.snapshot(client, self.key))
 
     @asynccontextmanager
     async def replace(self, client: ClientType):

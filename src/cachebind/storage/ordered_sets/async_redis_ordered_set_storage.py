@@ -70,7 +70,7 @@ class AsyncRedisOrderedSetStorage(AsyncOrderedSetStorage[AsyncRedis, str]):
             return []
         return pairs_from_range(await client.zrevrange(name, start, stop, withscores=True))
 
-    async def swap(self, client: AsyncRedis, name: str) -> str:
+    async def snapshot(self, client: AsyncRedis, name: str) -> str:
         return await async_swap_key(client, name)
 
     async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:

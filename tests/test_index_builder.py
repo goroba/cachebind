@@ -110,7 +110,7 @@ class MemoryStorage(KeyValueStorage[Memory, str, str]):
         for field, value in items.items():
             self.data[(name, field)] = value
 
-    def swap(self, client: Memory, name: str) -> str:
+    def snapshot(self, client: Memory, name: str) -> str:
         return f"{name}:swap"
 
     def drop(self, client: Memory, name: str) -> None:

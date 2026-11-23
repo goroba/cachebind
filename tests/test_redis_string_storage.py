@@ -160,7 +160,7 @@ def test_sync_string_storage_rejects_swap() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     storage = RedisStringStorage()
     with pytest.raises(NotImplementedError):
-        storage.swap(client, _NAME)
+        storage.snapshot(client, _NAME)
     with pytest.raises(NotImplementedError):
         storage.drop(client, _NAME)
     with pytest.raises(NotImplementedError):
@@ -173,7 +173,7 @@ def test_async_string_storage_rejects_swap() -> None:
         storage = AsyncRedisStringStorage()
         try:
             with pytest.raises(NotImplementedError):
-                await storage.swap(client, _NAME)
+                await storage.snapshot(client, _NAME)
             with pytest.raises(NotImplementedError):
                 await storage.drop(client, _NAME)
             with pytest.raises(NotImplementedError):

@@ -35,7 +35,7 @@ class RedisSetStorage(SetStorage[Redis, str]):
     def contains(self, client: Redis, name: str, member: str) -> bool:
         return bool(client.sismember(name, member))
 
-    def swap(self, client: Redis, name: str) -> str:
+    def snapshot(self, client: Redis, name: str) -> str:
         return swap_key(client, name)
 
     def replace(self, client: Redis, source: str, dest: str) -> None:

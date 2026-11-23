@@ -56,9 +56,9 @@ class RedisStringStorage(KeyValueStorage[Redis, str, str]):
             pipe.set(key, value, ex=ttl)
         pipe.execute()
 
-    def swap(self, client: Redis, name: str) -> str:
+    def snapshot(self, client: Redis, name: str) -> str:
         raise NotImplementedError(
-            f"{type(self).__name__} keeps one Redis key per field and cannot swap"
+            f"{type(self).__name__} keeps one Redis key per field and cannot snapshot"
         )
 
     def replace(self, client: Redis, source: str, dest: str) -> None:

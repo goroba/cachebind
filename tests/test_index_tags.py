@@ -62,7 +62,7 @@ class MemoryStorage(KeyValueStorage[Memory, str, str]):
         for field, value in items.items():
             self.data[(name, field)] = value
 
-    def swap(self, client: Memory, name: str) -> str:
+    def snapshot(self, client: Memory, name: str) -> str:
         return f"{name}:swap"
 
     def drop(self, client: Memory, name: str) -> None:
@@ -103,7 +103,7 @@ class AsyncMemoryHash(AsyncKeyValueStorage[Memory, str, str]):
         for field, value in items.items():
             self.data[(name, field)] = value
 
-    async def swap(self, client: Memory, name: str) -> str:
+    async def snapshot(self, client: Memory, name: str) -> str:
         return f"{name}:swap"
 
     async def drop(self, client: Memory, name: str) -> None:
@@ -165,7 +165,7 @@ def test_set_add_tags() -> None:
         def contains(self, client: object, name: str, member: str) -> bool:
             return member in self.members.get(name, set())
 
-        def swap(self, client: object, name: str) -> str:
+        def snapshot(self, client: object, name: str) -> str:
             return name
 
         def drop(self, client: object, name: str) -> None:
@@ -238,7 +238,7 @@ def test_trie_tags_and_builder() -> None:
         def length(self, client: object, name: str) -> int:
             return 0
 
-        def swap(self, client: object, name: str) -> str:
+        def snapshot(self, client: object, name: str) -> str:
             return name
 
         def drop(self, client: object, name: str) -> None:
@@ -330,7 +330,7 @@ def test_set_evict_by_identifier() -> None:
         def contains(self, client: object, name: str, member: str) -> bool:
             return member in self.members.get(name, set())
 
-        def swap(self, client: object, name: str) -> str:
+        def snapshot(self, client: object, name: str) -> str:
             return name
 
         def drop(self, client: object, name: str) -> None:
@@ -408,7 +408,7 @@ def test_ordered_set_evict_by_identifier() -> None:
         ) -> list[tuple[str, float]]:
             return []
 
-        def swap(self, client: object, name: str) -> str:
+        def snapshot(self, client: object, name: str) -> str:
             return name
 
         def drop(self, client: object, name: str) -> None:
@@ -474,7 +474,7 @@ class TagTrieStorageStub(TrieStorage[object, str]):
     def length(self, client: object, name: str) -> int:
         return 0
 
-    def swap(self, client: object, name: str) -> str:
+    def snapshot(self, client: object, name: str) -> str:
         return name
 
     def drop(self, client: object, name: str) -> None:
@@ -518,7 +518,7 @@ def test_async_evict() -> None:
         async def contains(self, client: object, name: str, member: str) -> bool:
             return member in self.members.get(name, set())
 
-        async def swap(self, client: object, name: str) -> str:
+        async def snapshot(self, client: object, name: str) -> str:
             return name
 
         async def drop(self, client: object, name: str) -> None:
@@ -612,7 +612,7 @@ class AsyncTagTrieStorageStub(AsyncTrieStorage[object, str]):
     async def length(self, client: object, name: str) -> int:
         return 0
 
-    async def swap(self, client: object, name: str) -> str:
+    async def snapshot(self, client: object, name: str) -> str:
         return name
 
     async def drop(self, client: object, name: str) -> None:

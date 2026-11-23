@@ -40,7 +40,7 @@ class KeeperSetStorage(SetStorage[Memory, str]):
     def contains(self, client: Memory, name: str, member: str) -> bool:
         return member in self.members.get(name, set())
 
-    def swap(self, client: Memory, name: str) -> str:
+    def snapshot(self, client: Memory, name: str) -> str:
         return name
 
     def drop(self, client: Memory, name: str) -> None:
@@ -71,7 +71,7 @@ class AsyncKeeperSetStorage(AsyncSetStorage[Memory, str]):
     async def contains(self, client: Memory, name: str, member: str) -> bool:
         return member in self.members.get(name, set())
 
-    async def swap(self, client: Memory, name: str) -> str:
+    async def snapshot(self, client: Memory, name: str) -> str:
         return name
 
     async def drop(self, client: Memory, name: str) -> None:
@@ -192,7 +192,7 @@ def test_tag_keeper_trie_evict_raises() -> None:
         def length(self, client: Memory, name: str) -> int:
             return 0
 
-        def swap(self, client: Memory, name: str) -> str:
+        def snapshot(self, client: Memory, name: str) -> str:
             return name
 
         def drop(self, client: Memory, name: str) -> None:

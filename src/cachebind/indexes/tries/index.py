@@ -108,7 +108,7 @@ class TrieIndex[ClientType, MemberType, StorageType: Hashable](
 
     def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
-        return self.detach(self.storage.swap(client, self.key))
+        return self.detach(self.storage.snapshot(client, self.key))
 
     @contextmanager
     def replace(self, client: ClientType):

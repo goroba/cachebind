@@ -35,7 +35,7 @@ class AsyncRedisSetStorage(AsyncSetStorage[AsyncRedis, str]):
     async def contains(self, client: AsyncRedis, name: str, member: str) -> bool:
         return bool(await client.sismember(name, member))
 
-    async def swap(self, client: AsyncRedis, name: str) -> str:
+    async def snapshot(self, client: AsyncRedis, name: str) -> str:
         return await async_swap_key(client, name)
 
     async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:

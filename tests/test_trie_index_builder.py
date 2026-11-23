@@ -108,8 +108,8 @@ class TrieData:
         self.calls.append("length")
         return len(self.data.get(name, {}))
 
-    def swap(self, name: str) -> str:
-        self.calls.append("swap")
+    def snapshot(self, name: str) -> str:
+        self.calls.append("snapshot")
         renamed = f"{name}:swap:{uuid4().hex}"
         self.data[renamed] = self.data.pop(name, {})
         return renamed
@@ -171,8 +171,8 @@ class MemoryTrie(TrieStorage[Spy, str]):
     def length(self, client: Spy, name: str) -> int:
         return self.data.length(name)
 
-    def swap(self, client: Spy, name: str) -> str:
-        return self.data.swap(name)
+    def snapshot(self, client: Spy, name: str) -> str:
+        return self.data.snapshot(name)
 
     def replace(self, client: Spy, source: str, dest: str) -> None:
         self.data.replace(source, dest)
@@ -227,8 +227,8 @@ class AsyncMemoryTrie(AsyncTrieStorage[AsyncSpy, str]):
     async def length(self, client: AsyncSpy, name: str) -> int:
         return self.data.length(name)
 
-    async def swap(self, client: AsyncSpy, name: str) -> str:
-        return self.data.swap(name)
+    async def snapshot(self, client: AsyncSpy, name: str) -> str:
+        return self.data.snapshot(name)
 
     async def replace(self, client: AsyncSpy, source: str, dest: str) -> None:
         self.data.replace(source, dest)

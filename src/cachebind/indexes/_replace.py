@@ -1,4 +1,4 @@
-"""Shared replace context manager for swap-capable indexes."""
+"""Shared replace context manager for snapshot-capable indexes."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def staging_key(live_key: str) -> str:
 def _assert_replaceable_sync(index: Index, client: object) -> None:
     probe = f"{index.key}:replaceable:{uuid4().hex}"
     try:
-        index.storage.swap(client, probe)
+        index.storage.snapshot(client, probe)
     except NotImplementedError as exc:
         raise NotImplementedError(
             f"{type(index.storage).__name__} cannot replace a single-key index"
@@ -29,7 +29,7 @@ def _assert_replaceable_sync(index: Index, client: object) -> None:
 async def _assert_replaceable_async(index: Index, client: object) -> None:
     probe = f"{index.key}:replaceable:{uuid4().hex}"
     try:
-        await index.storage.swap(client, probe)
+        await index.storage.snapshot(client, probe)
     except NotImplementedError as exc:
         raise NotImplementedError(
             f"{type(index.storage).__name__} cannot replace a single-key index"

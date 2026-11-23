@@ -2,7 +2,12 @@ import asyncio
 
 import fakeredis
 
-from cachebind.storage import AsyncRedisSetStorage, RedisSetStorage
+from cachebind.storage import (
+    AsyncIterableStorage,
+    AsyncRedisSetStorage,
+    IterableStorage,
+    RedisSetStorage,
+)
 from cachebind.storage.sets.async_storage import AsyncSetStorage
 from cachebind.storage.sets.storage import SetStorage
 
@@ -24,6 +29,7 @@ def test_sync_set_storage_round_trip() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     storage = RedisSetStorage()
     assert isinstance(storage, SetStorage)
+    assert isinstance(storage, IterableStorage)
 
     assert storage.contains(client, "users", "1") is False
     storage.remove(client, "users", "1")
@@ -61,6 +67,7 @@ def test_async_set_storage_round_trip() -> None:
         client = fakeredis.FakeAsyncRedis(decode_responses=True)
         storage = AsyncRedisSetStorage()
         assert isinstance(storage, AsyncSetStorage)
+        assert isinstance(storage, AsyncIterableStorage)
         try:
             assert await storage.contains(client, "users", "1") is False
             await storage.remove(client, "users", "1")

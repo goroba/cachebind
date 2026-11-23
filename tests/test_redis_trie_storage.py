@@ -3,7 +3,14 @@ import asyncio
 import fakeredis
 import pytest
 
-from cachebind.storage import AsyncRedisTrieStorage, RedisTrieStorage
+from cachebind.storage import (
+    AsyncRedisTrieStorage,
+    AsyncSnapshotableStorage,
+    DroppableStorage,
+    IterableStorage,
+    RedisTrieStorage,
+    SnapshotableStorage,
+)
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
 from cachebind.storage.tries.storage import TrieStorage
 
@@ -95,6 +102,9 @@ def test_sync_trie_storage_commands() -> None:
     )
     storage = RedisTrieStorage()
     assert isinstance(storage, TrieStorage)
+    assert isinstance(storage, SnapshotableStorage)
+    assert isinstance(storage, DroppableStorage)
+    assert not isinstance(storage, IterableStorage)
 
     storage.add(client, "cities", "Paris", 900.0, "1")
     storage.add(client, "cities", "Prague", 5.0, "2", increment=True)
@@ -161,14 +171,14 @@ def test_sync_trie_storage_swap_renames_the_key() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     client.set("trie_swap", "x")
     storage = RedisTrieStorage()
-    renamed = storage.swap(client, "trie_swap")
+    renamed = storage.snapshot(client, "trie_swap")
     assert renamed.startswith("trie_swap:swap:")
     assert client.get("trie_swap") is None
     assert client.get(renamed) == "x"
     storage.drop(client, renamed)
     assert client.get(renamed) is None
 
-    missing = storage.swap(client, "trie_swap_missing")
+    missing = storage.snapshot(client, "trie_swap_missing")
     assert missing.startswith("trie_swap_missing:swap:")
     storage.drop(client, "trie_swap_missing")
 
@@ -188,6 +198,8 @@ def test_async_trie_storage_commands() -> None:
         client = AsyncScripted(replies=[1, ["Paris", "1"], 1, 0, 1, 0])
         storage = AsyncRedisTrieStorage()
         assert isinstance(storage, AsyncTrieStorage)
+        assert isinstance(storage, AsyncSnapshotableStorage)
+        assert not isinstance(storage, IterableStorage)
         await storage.add(client, "cities", "Paris", 900.0, "1", increment=True)
         assert await storage.search(client, "cities", "Pa", limit=1) == ["1"]
         assert await storage.length(client, "cities") == 1
@@ -227,13 +239,13 @@ def test_async_trie_storage_swap_renames_the_key() -> None:
         storage = AsyncRedisTrieStorage()
         try:
             await client.set("async_trie_swap", "x")
-            renamed = await storage.swap(client, "async_trie_swap")
+            renamed = await storage.snapshot(client, "async_trie_swap")
             assert renamed.startswith("async_trie_swap:swap:")
             assert await client.get("async_trie_swap") is None
             assert await client.get(renamed) == "x"
             await storage.drop(client, renamed)
             assert await client.get(renamed) is None
-            missing = await storage.swap(client, "async_trie_swap_missing")
+            missing = await storage.snapshot(client, "async_trie_swap_missing")
             assert missing.startswith("async_trie_swap_missing:swap:")
             await storage.drop(client, "async_trie_swap_missing")
         finally:

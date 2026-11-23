@@ -4,16 +4,24 @@ from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 import pytest
 
 from cachebind import (
+    AsyncDroppableStorage,
+    AsyncIterableStorage,
     AsyncKeyValueIndex,
     AsyncKeyValueStorage,
     AsyncOrderedSetStorage,
+    AsyncReplaceableStorage,
     AsyncSetStorage,
+    AsyncSnapshotableStorage,
     AsyncTrieStorage,
+    DroppableStorage,
+    IterableStorage,
     IntSerializer,
     KeyValueIndex,
     KeyValueStorage,
     OrderedSetStorage,
+    ReplaceableStorage,
     SetStorage,
+    SnapshotableStorage,
     TrieStorage,
     get_registry,
 )
@@ -178,7 +186,7 @@ class MemoryHash:
     ) -> None:
         return None
 
-    def swap(self, client: object, name: str) -> str:
+    def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     def replace(self, client: object, source: str, dest: str) -> None:
@@ -217,7 +225,7 @@ class AsyncMemoryHash:
     ) -> None:
         return None
 
-    async def swap(self, client: object, name: str) -> str:
+    async def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     async def replace(self, client: object, source: str, dest: str) -> None:
@@ -247,7 +255,7 @@ class MemorySet:
     def contains(self, client: object, name: str, member: str) -> bool:
         return False
 
-    def swap(self, client: object, name: str) -> str:
+    def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     def replace(self, client: object, source: str, dest: str) -> None:
@@ -276,7 +284,7 @@ class AsyncMemorySet:
     async def contains(self, client: object, name: str, member: str) -> bool:
         return False
 
-    async def swap(self, client: object, name: str) -> str:
+    async def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     async def replace(self, client: object, source: str, dest: str) -> None:
@@ -331,7 +339,7 @@ class MemoryOrderedSet:
     ) -> list[tuple[str, float]]:
         return []
 
-    def swap(self, client: object, name: str) -> str:
+    def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     def replace(self, client: object, source: str, dest: str) -> None:
@@ -387,7 +395,7 @@ class AsyncMemoryOrderedSet:
     ) -> list[tuple[str, float]]:
         return []
 
-    async def swap(self, client: object, name: str) -> str:
+    async def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     async def replace(self, client: object, source: str, dest: str) -> None:
@@ -444,7 +452,7 @@ class MemoryTrie:
     def length(self, client: object, name: str) -> int:
         return 0
 
-    def swap(self, client: object, name: str) -> str:
+    def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     def replace(self, client: object, source: str, dest: str) -> None:
@@ -497,7 +505,7 @@ class AsyncMemoryTrie:
     async def length(self, client: object, name: str) -> int:
         return 0
 
-    async def swap(self, client: object, name: str) -> str:
+    async def snapshot(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
     async def replace(self, client: object, source: str, dest: str) -> None:
@@ -507,15 +515,71 @@ class AsyncMemoryTrie:
         return None
 
 
+class PartialKvStorage:
+    def get(self, client: object, name: str, field: str) -> str | None:
+        return None
+
+    def set(
+        self, client: object, name: str, field: str, value: str, *, ttl: int | None = None
+    ) -> None:
+        return None
+
+    def delete(self, client: object, name: str, field: str) -> None:
+        return None
+
+    def mdelete(self, client: object, name: str, fields: Sequence[str]) -> None:
+        return None
+
+    def exists(self, client: object, name: str, field: str) -> bool:
+        return False
+
+    def mget(self, client: object, name: str, fields: Sequence[str]) -> list[str | None]:
+        return [None for _ in fields]
+
+    def mset(
+        self, client: object, name: str, items: Mapping[str, str], *, ttl: int | None = None
+    ) -> None:
+        return None
+
+
 def test_storage_protocols() -> None:
-    assert isinstance(MemoryHash(), KeyValueStorage)
-    assert isinstance(AsyncMemoryHash(), AsyncKeyValueStorage)
-    assert isinstance(MemorySet(), SetStorage)
-    assert isinstance(AsyncMemorySet(), AsyncSetStorage)
-    assert isinstance(MemoryOrderedSet(), OrderedSetStorage)
-    assert isinstance(AsyncMemoryOrderedSet(), AsyncOrderedSetStorage)
-    assert isinstance(MemoryTrie(), TrieStorage)
-    assert isinstance(AsyncMemoryTrie(), AsyncTrieStorage)
+    kv = MemoryHash()
+    async_kv = AsyncMemoryHash()
+    assert isinstance(kv, KeyValueStorage)
+    assert isinstance(async_kv, AsyncKeyValueStorage)
+    assert isinstance(kv, SnapshotableStorage)
+    assert isinstance(kv, ReplaceableStorage)
+    assert isinstance(kv, DroppableStorage)
+    assert isinstance(kv, IterableStorage)
+    assert isinstance(async_kv, AsyncSnapshotableStorage)
+    assert isinstance(async_kv, AsyncReplaceableStorage)
+    assert isinstance(async_kv, AsyncDroppableStorage)
+    assert isinstance(async_kv, AsyncIterableStorage)
+
+    partial = PartialKvStorage()
+    assert isinstance(partial, KeyValueStorage)
+    assert not isinstance(partial, SnapshotableStorage)
+    assert not isinstance(partial, IterableStorage)
+
+    set_storage = MemorySet()
+    async_set = AsyncMemorySet()
+    assert isinstance(set_storage, SetStorage)
+    assert isinstance(async_set, AsyncSetStorage)
+    assert isinstance(set_storage, SnapshotableStorage)
+    assert isinstance(set_storage, IterableStorage)
+
+    ordered = MemoryOrderedSet()
+    async_ordered = AsyncMemoryOrderedSet()
+    assert isinstance(ordered, OrderedSetStorage)
+    assert isinstance(async_ordered, AsyncOrderedSetStorage)
+    assert isinstance(ordered, SnapshotableStorage)
+
+    trie = MemoryTrie()
+    async_trie = AsyncMemoryTrie()
+    assert isinstance(trie, TrieStorage)
+    assert isinstance(async_trie, AsyncTrieStorage)
+    assert isinstance(trie, SnapshotableStorage)
+    assert not isinstance(trie, IterableStorage)
 
 
 def test_public_api_omits_redis_storages() -> None:

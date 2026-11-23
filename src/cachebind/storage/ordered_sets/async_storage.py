@@ -1,6 +1,6 @@
 """Asynchronous ordered-set storage."""
 
-from collections.abc import AsyncIterator, Hashable, Sequence
+from collections.abc import Hashable, Sequence
 from typing import Protocol, runtime_checkable
 
 
@@ -14,8 +14,6 @@ class AsyncOrderedSetStorage[ClientType, MemberType: Hashable](Protocol):
     Removing a missing member is not an error.
     ``rank`` is 0-based and ascending. ``rev_rank`` is 0-based and descending.
     A range includes ``start`` and ``stop``.
-    A storage that cannot treat ``name`` as one key raises ``NotImplementedError``
-    from ``swap``, ``drop``, and ``iter``.
     """
 
     async def add(self, client: ClientType, name: str, member: MemberType, score: float) -> None:
@@ -74,20 +72,4 @@ class AsyncOrderedSetStorage[ClientType, MemberType: Hashable](Protocol):
         self, client: ClientType, name: str, start: int, stop: int
     ) -> list[tuple[MemberType, float]]:
         """Return members and scores from ``start`` through ``stop``, highest score first."""
-        ...
-
-    async def swap(self, client: ClientType, name: str) -> str:
-        """Rename ``name`` aside and return the new name. A missing name still returns one."""
-        ...
-
-    async def replace(self, client: ClientType, source: str, dest: str) -> None:
-        """Rename ``source`` onto ``dest``. ``dest`` is overwritten atomically."""
-        ...
-
-    async def drop(self, client: ClientType, name: str) -> None:
-        """Delete ``name``. A missing name is not an error."""
-        ...
-
-    def iter(self, client: ClientType, name: str) -> AsyncIterator[tuple[MemberType, float]]:
-        """Yield every member and score stored under ``name``, lowest score first."""
         ...

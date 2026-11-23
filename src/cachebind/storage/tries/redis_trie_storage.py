@@ -72,7 +72,7 @@ class RedisTrieStorage(TrieStorage[Redis, str]):
     def length(self, client: Redis, name: str) -> int:
         return length_value(client.execute_command("FT.SUGLEN", name))
 
-    def swap(self, client: Redis, name: str) -> str:
+    def snapshot(self, client: Redis, name: str) -> str:
         return swap_key(client, name)
 
     def replace(self, client: Redis, source: str, dest: str) -> None:

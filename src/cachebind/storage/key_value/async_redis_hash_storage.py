@@ -54,7 +54,7 @@ class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
         if ttl is not None:
             await client.hexpire(name, ttl, *mapping)
 
-    async def swap(self, client: AsyncRedis, name: str) -> str:
+    async def snapshot(self, client: AsyncRedis, name: str) -> str:
         return await async_swap_key(client, name)
 
     async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:

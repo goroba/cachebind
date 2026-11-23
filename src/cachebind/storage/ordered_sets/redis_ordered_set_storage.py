@@ -68,7 +68,7 @@ class RedisOrderedSetStorage(OrderedSetStorage[Redis, str]):
             return []
         return pairs_from_range(client.zrevrange(name, start, stop, withscores=True))
 
-    def swap(self, client: Redis, name: str) -> str:
+    def snapshot(self, client: Redis, name: str) -> str:
         return swap_key(client, name)
 
     def replace(self, client: Redis, source: str, dest: str) -> None:

@@ -54,7 +54,7 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
         if ttl is not None:
             client.hexpire(name, ttl, *mapping)
 
-    def swap(self, client: Redis, name: str) -> str:
+    def snapshot(self, client: Redis, name: str) -> str:
         return swap_key(client, name)
 
     def replace(self, client: Redis, source: str, dest: str) -> None:

@@ -2,7 +2,12 @@ import asyncio
 
 import fakeredis
 
-from cachebind.storage import AsyncRedisOrderedSetStorage, RedisOrderedSetStorage
+from cachebind.storage import (
+    AsyncIterableStorage,
+    AsyncRedisOrderedSetStorage,
+    IterableStorage,
+    RedisOrderedSetStorage,
+)
 from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
 from cachebind.storage.ordered_sets.storage import OrderedSetStorage
 
@@ -36,6 +41,7 @@ def test_sync_ordered_set_storage_round_trip() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     storage = RedisOrderedSetStorage()
     assert isinstance(storage, OrderedSetStorage)
+    assert isinstance(storage, IterableStorage)
 
     assert storage.contains(client, "scores", "a") is False
     assert storage.score(client, "scores", "a") is None
@@ -104,6 +110,7 @@ def test_async_ordered_set_storage_round_trip() -> None:
         client = fakeredis.FakeAsyncRedis(decode_responses=True)
         storage = AsyncRedisOrderedSetStorage()
         assert isinstance(storage, AsyncOrderedSetStorage)
+        assert isinstance(storage, AsyncIterableStorage)
         try:
             assert await storage.contains(client, "scores", "a") is False
             assert await storage.score(client, "scores", "a") is None

@@ -5,6 +5,16 @@ import fakeredis
 
 from cachebind.storage.key_value.async_redis_hash_storage import AsyncRedisHashStorage
 from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
+from cachebind.storage import (
+    AsyncDroppableStorage,
+    AsyncIterableStorage,
+    AsyncReplaceableStorage,
+    AsyncSnapshotableStorage,
+    DroppableStorage,
+    IterableStorage,
+    ReplaceableStorage,
+    SnapshotableStorage,
+)
 from cachebind.storage.key_value.redis_hash_storage import RedisHashStorage
 from cachebind.storage.key_value.storage import KeyValueStorage
 
@@ -38,6 +48,10 @@ def test_sync_hash_storage_round_trip() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     storage = RedisHashStorage()
     assert isinstance(storage, KeyValueStorage)
+    assert isinstance(storage, SnapshotableStorage)
+    assert isinstance(storage, ReplaceableStorage)
+    assert isinstance(storage, DroppableStorage)
+    assert isinstance(storage, IterableStorage)
 
     assert storage.get(client, "users", "1") is None
     assert storage.exists(client, "users", "1") is False
@@ -95,6 +109,8 @@ def test_async_hash_storage_round_trip() -> None:
         client = fakeredis.FakeAsyncRedis(decode_responses=True)
         storage = AsyncRedisHashStorage()
         assert isinstance(storage, AsyncKeyValueStorage)
+        assert isinstance(storage, AsyncSnapshotableStorage)
+        assert isinstance(storage, AsyncIterableStorage)
         try:
             assert await storage.get(client, "users", "1") is None
             assert await storage.exists(client, "users", "1") is False

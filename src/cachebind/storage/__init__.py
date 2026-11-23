@@ -5,29 +5,41 @@ Protocols do not require Redis. Importing a Redis storage class requires the ``r
 
 import importlib
 
+from cachebind.storage.droppable import AsyncDroppableStorage, DroppableStorage
+from cachebind.storage.iterable import AsyncIterableStorage, IterableStorage
 from cachebind.storage.key_value import AsyncKeyValueStorage, KeyValueStorage
 from cachebind.storage.ordered_sets import AsyncOrderedSetStorage, OrderedSetStorage
+from cachebind.storage.replaceable import AsyncReplaceableStorage, ReplaceableStorage
 from cachebind.storage.sets import AsyncSetStorage, SetStorage
+from cachebind.storage.snapshotable import AsyncSnapshotableStorage, SnapshotableStorage
 from cachebind.storage.tries import AsyncTrieStorage, TrieStorage
 
 __all__ = [
+    "AsyncDroppableStorage",
+    "AsyncIterableStorage",
     "AsyncKeyValueStorage",
     "AsyncOrderedSetStorage",
+    "AsyncReplaceableStorage",
     "AsyncRedisHashStorage",
     "AsyncRedisOrderedSetStorage",
     "AsyncRedisSetStorage",
     "AsyncRedisStringStorage",
     "AsyncRedisTrieStorage",
     "AsyncSetStorage",
+    "AsyncSnapshotableStorage",
     "AsyncTrieStorage",
+    "DroppableStorage",
+    "IterableStorage",
     "KeyValueStorage",
     "OrderedSetStorage",
+    "ReplaceableStorage",
     "RedisHashStorage",
     "RedisOrderedSetStorage",
     "RedisSetStorage",
     "RedisStringStorage",
     "RedisTrieStorage",
     "SetStorage",
+    "SnapshotableStorage",
     "TrieStorage",
 ]
 
