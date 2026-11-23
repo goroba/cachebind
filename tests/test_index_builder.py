@@ -14,12 +14,14 @@ from cachebind import (
     AsyncDroppableIndex,
     AsyncIterableIndex,
     AsyncKeyValueIndex,
+    AsyncReplaceableIndex,
     AsyncSnapshotableIndex,
     DictSerializer,
     DroppableIndex,
     IntSerializer,
     IterableIndex,
     KeyValueIndex,
+    ReplaceableIndex,
     SnapshotableIndex,
     build_async_key_value_index,
     build_key_value_index,
@@ -542,6 +544,102 @@ def test_async_hash_index_snapshot_detaches_data() -> None:
             assert [item async for item in empty.iter(client)] == []
             await missing.drop(client)
             await empty.drop(client)
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_hash_index_replace_publishes_staging() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "replace_hash_users",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisHashStorage(),
+    )
+    assert isinstance(index, ReplaceableIndex)
+    index.set(client, 99, 99)
+    with index.replace(client) as staging:
+        assert index.get(client, 99) == 99
+        staging.set(client, 1, 10)
+        staging.set(client, 2, 20)
+    assert get_registry(Redis).get("replace_hash_users") is index
+    assert index.get(client, 1) == 10
+    assert index.get(client, 99) is None
+
+
+def test_hash_index_replace_failure_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "replace_hash_users_fail",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisHashStorage(),
+    )
+    index.set(client, 99, 99)
+    with pytest.raises(RuntimeError):
+        with index.replace(client) as staging:
+            staging.set(client, 1, 1)
+            raise RuntimeError
+    assert index.get(client, 99) == 99
+    assert index.get(client, 1) is None
+
+
+def test_async_hash_index_replace_publishes_staging() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_key_value_index(
+            "async_replace_hash_users",
+            id_type=int,
+            model_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisHashStorage(),
+        )
+        assert isinstance(index, AsyncReplaceableIndex)
+        await index.set(client, 99, 99)
+        async with index.replace(client) as staging:
+            assert await index.get(client, 99) == 99
+            await staging.set(client, 1, 10)
+        assert await index.get(client, 1) == 10
+        assert await index.get(client, 99) is None
+        await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_string_index_replace_is_rejected() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "replace_string_users",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisStringStorage(),
+    )
+    with pytest.raises(NotImplementedError):
+        with index.replace(client):
+            pass
+    assert get_registry(Redis).get("replace_string_users") is index
+
+
+def test_async_string_index_replace_is_rejected() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_key_value_index(
+            "async_replace_string_users",
+            id_type=int,
+            model_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisStringStorage(),
+        )
+        try:
+            with pytest.raises(NotImplementedError):
+                async with index.replace(client):
+                    pass
+            assert get_registry(AsyncRedis).get("async_replace_string_users") is index
         finally:
             await client.aclose()
 

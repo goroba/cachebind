@@ -68,13 +68,29 @@ async def async_swap_key(client: AsyncRedis, name: str) -> str:
     return snapshot_name
 
 
+def replace_key(client: Redis, source: str, dest: str) -> None:
+    """Rename ``source`` onto ``dest``. ``dest`` is overwritten atomically."""
+    if source == dest:
+        raise ValueError("source and dest must differ")
+    client.rename(source, dest)
+
+
+async def async_replace_key(client: AsyncRedis, source: str, dest: str) -> None:
+    """Rename ``source`` onto ``dest``. ``dest`` is overwritten atomically."""
+    if source == dest:
+        raise ValueError("source and dest must differ")
+    await client.rename(source, dest)
+
+
 __all__ = [
     "AsyncRedis",
     "Redis",
     "SCAN_COUNT",
+    "async_replace_key",
     "async_swap_key",
     "decode",
     "required_text",
     "scan_done",
+    "replace_key",
     "swap_key",
 ]

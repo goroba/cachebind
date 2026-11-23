@@ -1,8 +1,10 @@
 """Synchronous key-value index."""
 
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from typing import Self
 
+from cachebind.indexes._replace import replace_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.key_value.base import KeyValueBase
 from cachebind.serializers.serializer import Serializer
@@ -106,6 +108,12 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
     def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(self.storage.swap(client, self.key))
+
+    @contextmanager
+    def replace(self, client: ClientType):
+        """Yield a detached staging index; publish it on success or drop it on failure."""
+        with replace_context(self, client) as staging:
+            yield staging
 
     def drop(self, client: ClientType) -> None:
         """Delete the key this index is bound to. A missing key is not an error."""

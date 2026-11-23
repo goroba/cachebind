@@ -1,8 +1,10 @@
 """Asynchronous trie index."""
 
 from collections.abc import Hashable, Sequence
+from contextlib import asynccontextmanager
 from typing import Self
 
+from cachebind.indexes._replace import async_replace_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.tries.base import TrieBase
 from cachebind.storage.tries._values import check_limit
@@ -107,6 +109,12 @@ class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
     async def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(await self.storage.swap(client, self.key))
+
+    @asynccontextmanager
+    async def replace(self, client: ClientType):
+        """Yield a detached staging index; publish it on success or drop it on failure."""
+        async with async_replace_context(self, client) as staging:
+            yield staging
 
     async def drop(self, client: ClientType) -> None:
         """Delete the key this index is bound to. A missing key is not an error."""

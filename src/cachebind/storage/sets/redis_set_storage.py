@@ -5,6 +5,7 @@ from collections.abc import Iterator, Sequence
 from cachebind.storage._redis import (
     SCAN_COUNT,
     Redis,
+    replace_key,
     required_text,
     scan_done,
     swap_key,
@@ -36,6 +37,9 @@ class RedisSetStorage(SetStorage[Redis, str]):
 
     def swap(self, client: Redis, name: str) -> str:
         return swap_key(client, name)
+
+    def replace(self, client: Redis, source: str, dest: str) -> None:
+        replace_key(client, source, dest)
 
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)

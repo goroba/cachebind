@@ -61,6 +61,11 @@ class AsyncRedisStringStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
             f"{type(self).__name__} keeps one Redis key per field and cannot swap"
         )
 
+    async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot replace"
+        )
+
     async def drop(self, client: AsyncRedis, name: str) -> None:
         raise NotImplementedError(
             f"{type(self).__name__} keeps one Redis key per field and cannot drop"

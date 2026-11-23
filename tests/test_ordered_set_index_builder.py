@@ -9,11 +9,13 @@ from redis.asyncio import Redis as AsyncRedis
 from cachebind import (
     AsyncIterableIndex,
     AsyncOrderedSetIndex,
+    AsyncReplaceableIndex,
     AsyncSnapshotableIndex,
     DroppableIndex,
     IntSerializer,
     IterableIndex,
     OrderedSetIndex,
+    ReplaceableIndex,
     SnapshotableIndex,
     build_async_key_value_index,
     build_async_ordered_set_index,
@@ -526,5 +528,123 @@ def test_async_ordered_set_index_snapshot_detaches_data() -> None:
             await empty.drop(client)
         finally:
             await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_ordered_set_index_replace_publishes_staging() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "replace_leaderboard",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    assert isinstance(index, ReplaceableIndex)
+    index.add(client, 99, 99.0)
+    staging_key: str | None = None
+    with index.replace(client) as staging:
+        staging_key = staging.key
+        assert staging.key.startswith("replace_leaderboard:replace:")
+        assert staging.key not in get_registry(Redis)
+        assert index.score(client, 99) == 99.0
+        staging.add(client, 1, 10.0)
+        staging.add(client, 2, 20.0)
+    registry = get_registry(Redis)
+    assert registry.get("replace_leaderboard") is index
+    assert index.score(client, 1) == 10.0
+    assert index.score(client, 2) == 20.0
+    assert index.score(client, 99) is None
+    assert staging_key is not None
+    assert client.exists(staging_key) == 0
+    assert staging.score(client, 1) is None
+
+
+def test_ordered_set_index_replace_failure_drops_staging() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "replace_leaderboard_fail",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    index.add(client, 99, 99.0)
+    staging_key: str | None = None
+    with pytest.raises(RuntimeError):
+        with index.replace(client) as staging:
+            staging_key = staging.key
+            staging.add(client, 1, 1.0)
+            raise RuntimeError("rebuild failed")
+    assert index.score(client, 99) == 99.0
+    assert index.score(client, 1) is None
+    assert staging_key is not None
+    assert client.exists(staging_key) == 0
+
+
+def test_ordered_set_index_replace_empty_clears_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "replace_leaderboard_empty",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    index.add(client, 99, 99.0)
+    with index.replace(client):
+        pass
+    assert index.score(client, 99) is None
+    assert list(index.iter(client)) == []
+
+
+def test_async_ordered_set_index_replace_publishes_staging() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_ordered_set_index(
+            "async_replace_leaderboard",
+            member_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisOrderedSetStorage(),
+        )
+        assert isinstance(index, AsyncReplaceableIndex)
+        await index.add(client, 99, 99.0)
+        staging_key: str | None = None
+        async with index.replace(client) as staging:
+            staging_key = staging.key
+            assert staging.key.startswith("async_replace_leaderboard:replace:")
+            assert staging.key not in get_registry(AsyncRedis)
+            assert await index.score(client, 99) == 99.0
+            await staging.add(client, 1, 10.0)
+            await staging.add(client, 2, 20.0)
+        registry = get_registry(AsyncRedis)
+        assert registry.get("async_replace_leaderboard") is index
+        assert await index.score(client, 1) == 10.0
+        assert await index.score(client, 99) is None
+        assert staging_key is not None
+        assert await client.exists(staging_key) == 0
+        await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_async_ordered_set_index_replace_failure_drops_staging() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_ordered_set_index(
+            "async_replace_leaderboard_fail",
+            member_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisOrderedSetStorage(),
+        )
+        await index.add(client, 99, 99.0)
+        staging_key: str | None = None
+        with pytest.raises(RuntimeError):
+            async with index.replace(client) as staging:
+                staging_key = staging.key
+                await staging.add(client, 1, 1.0)
+                raise RuntimeError("rebuild failed")
+        assert await index.score(client, 99) == 99.0
+        assert staging_key is not None
+        assert await client.exists(staging_key) == 0
+        await client.aclose()
 
     asyncio.run(scenario())

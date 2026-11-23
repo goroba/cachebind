@@ -178,3 +178,50 @@ Lin's `rev_rank` is `0` and the score is `2500.0`. Grace is `1`. Maya is `4`. A 
 with sessions() as session:
     leaderboard.remove(client, ada, serializer=UserSerializer(session))
 ```
+
+## Full rebuild
+
+A batch job can rebuild the whole board from Postgres without serving a half-filled `leaderboard` key. `replace` yields a detached staging index on a separate Redis key. The registered `leaderboard` name still points at the old data until the block exits cleanly.
+
+On success, staging is renamed onto `leaderboard` atomically. On failure, only the staging key is dropped; the live board is unchanged. An empty staging block clears the live key.
+
+`snapshot` does the opposite move: it renames the live key aside for a flush. See [Write-Back Caching example](write-back-caching.md).
+
+While the job runs, `leaderboard.add` still updates the old board. Those writes disappear when the rebuild publishes unless you merge them at the application layer.
+
+```python
+from sqlalchemy import select
+
+
+def load_leaderboard_rows(session: Session) -> list[tuple[User, float]]:
+    """Return every user and score to cache. Replace with your real query."""
+    rows = session.scalars(select(User)).all()
+    for row in rows:
+        session.expunge(row)
+    return [(row, 1000.0) for row in rows]
+
+
+with sessions() as session:
+    user_serializer = UserSerializer(session)
+    with leaderboard.replace(client) as staging:
+        for user, score in load_leaderboard_rows(session):
+            staging.add(client, member=user, score=score, serializer=user_serializer)
+```
+
+After the block, do not use `staging`; its Redis key was moved onto `leaderboard`. Reads and writes go through `leaderboard` as before.
+
+The async index from `build_async_ordered_set_index` with `AsyncRedisOrderedSetStorage` exposes the same staging workflow: `async with leaderboard.replace(client) as staging` and `await staging.add(...)`. Serializer calls stay synchronous; only Redis I/O is awaited.
+
+```python
+from redis.asyncio import Redis as AsyncRedis
+
+from cachebind import build_async_ordered_set_index
+from cachebind.storage import AsyncRedisOrderedSetStorage
+
+# leaderboard = build_async_ordered_set_index(..., storage=AsyncRedisOrderedSetStorage())
+# client: AsyncRedis with decode_responses=True
+
+async with leaderboard.replace(client) as staging:
+    for user, score in load_leaderboard_rows(session):
+        await staging.add(client, member=user, score=score, serializer=user_serializer)
+```

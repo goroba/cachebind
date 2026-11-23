@@ -8,11 +8,13 @@ from redis.asyncio import Redis as AsyncRedis
 
 from cachebind import (
     AsyncIterableIndex,
+    AsyncReplaceableIndex,
     AsyncSetIndex,
     AsyncSnapshotableIndex,
     DroppableIndex,
     IntSerializer,
     IterableIndex,
+    ReplaceableIndex,
     SetIndex,
     SnapshotableIndex,
     build_async_key_value_index,
@@ -381,5 +383,61 @@ def test_async_set_index_snapshot_detaches_data() -> None:
             await empty.drop(client)
         finally:
             await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_set_index_replace_publishes_staging() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_set_index(
+        "replace_active_users",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisSetStorage(),
+    )
+    assert isinstance(index, ReplaceableIndex)
+    index.add(client, 99)
+    with index.replace(client) as staging:
+        assert index.contains(client, 99) is True
+        staging.add(client, 1)
+        staging.add(client, 2)
+    assert get_registry(Redis).get("replace_active_users") is index
+    assert index.contains(client, 1) is True
+    assert index.contains(client, 99) is False
+
+
+def test_set_index_replace_failure_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_set_index(
+        "replace_active_users_fail",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisSetStorage(),
+    )
+    index.add(client, 99)
+    with pytest.raises(RuntimeError):
+        with index.replace(client) as staging:
+            staging.add(client, 1)
+            raise RuntimeError
+    assert index.contains(client, 99) is True
+    assert index.contains(client, 1) is False
+
+
+def test_async_set_index_replace_publishes_staging() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_set_index(
+            "async_replace_active_users",
+            member_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisSetStorage(),
+        )
+        assert isinstance(index, AsyncReplaceableIndex)
+        await index.add(client, 99)
+        async with index.replace(client) as staging:
+            await staging.add(client, 1)
+        assert await index.contains(client, 1) is True
+        assert await index.contains(client, 99) is False
+        await client.aclose()
 
     asyncio.run(scenario())

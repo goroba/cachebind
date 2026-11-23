@@ -8,11 +8,13 @@ from redis.asyncio import Redis as AsyncRedis
 
 from cachebind import (
     AsyncDroppableIndex,
+    AsyncReplaceableIndex,
     AsyncSnapshotableIndex,
     AsyncTrieIndex,
     DroppableIndex,
     IntSerializer,
     IterableIndex,
+    ReplaceableIndex,
     SnapshotableIndex,
     TrieIndex,
     build_async_ordered_set_index,
@@ -116,6 +118,12 @@ class TrieData:
         self.calls.append("drop")
         self.data.pop(name, None)
 
+    def replace(self, source: str, dest: str) -> None:
+        self.calls.append("replace")
+        if source == dest:
+            raise ValueError("source and dest must differ")
+        self.data[dest] = self.data.pop(source, {})
+
 
 class MemoryTrie(TrieStorage[Spy, str]):
     def __init__(self, data: TrieData | None = None) -> None:
@@ -165,6 +173,9 @@ class MemoryTrie(TrieStorage[Spy, str]):
 
     def swap(self, client: Spy, name: str) -> str:
         return self.data.swap(name)
+
+    def replace(self, client: Spy, source: str, dest: str) -> None:
+        self.data.replace(source, dest)
 
     def drop(self, client: Spy, name: str) -> None:
         self.data.drop(name)
@@ -218,6 +229,9 @@ class AsyncMemoryTrie(AsyncTrieStorage[AsyncSpy, str]):
 
     async def swap(self, client: AsyncSpy, name: str) -> str:
         return self.data.swap(name)
+
+    async def replace(self, client: AsyncSpy, source: str, dest: str) -> None:
+        self.data.replace(source, dest)
 
     async def drop(self, client: AsyncSpy, name: str) -> None:
         self.data.drop(name)
@@ -573,5 +587,57 @@ def test_async_trie_index_snapshot_detaches_data() -> None:
         await snapshot.drop(client)
         assert await snapshot.length(client) == 0
         assert registry.get("async_swap_cities") is index
+
+    asyncio.run(scenario())
+
+
+def test_trie_index_replace_publishes_staging() -> None:
+    client = Spy()
+    index = build_trie_index(
+        "replace_cities",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=MemoryTrie(),
+    )
+    assert isinstance(index, ReplaceableIndex)
+    index.add(client, "Old", 99, 99.0)
+    with index.replace(client) as staging:
+        assert index.length(client) == 1
+        staging.add(client, "Paris", 1, 900.0)
+    assert get_registry(Spy).get("replace_cities") is index
+    assert index.search(client, "P") == [1]
+    assert index.length(client) == 1
+
+
+def test_trie_index_replace_failure_preserves_live() -> None:
+    client = Spy()
+    index = build_trie_index(
+        "replace_cities_fail",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=MemoryTrie(),
+    )
+    index.add(client, "Old", 99, 99.0)
+    with pytest.raises(RuntimeError):
+        with index.replace(client) as staging:
+            staging.add(client, "Paris", 1, 900.0)
+            raise RuntimeError
+    assert index.length(client) == 1
+
+
+def test_async_trie_index_replace_publishes_staging() -> None:
+    async def scenario() -> None:
+        client = AsyncSpy()
+        index = build_async_trie_index(
+            "async_replace_cities",
+            member_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncMemoryTrie(),
+        )
+        assert isinstance(index, AsyncReplaceableIndex)
+        await index.add(client, "Old", 99, 99.0)
+        async with index.replace(client) as staging:
+            await staging.add(client, "Paris", 1, 900.0)
+        assert await index.search(client, "P") == [1]
 
     asyncio.run(scenario())

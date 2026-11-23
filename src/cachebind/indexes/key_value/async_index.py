@@ -1,8 +1,10 @@
 """Asynchronous key-value index."""
 
 from collections.abc import AsyncIterable, AsyncIterator, Hashable, Iterator, Mapping, Sequence
+from contextlib import asynccontextmanager
 from typing import Self
 
+from cachebind.indexes._replace import async_replace_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.key_value.base import KeyValueBase
 from cachebind.serializers.serializer import Serializer
@@ -106,6 +108,12 @@ class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
     async def snapshot(self, client: ClientType) -> Self:
         """Rename this index aside and return an unregistered index for that data."""
         return self.detach(await self.storage.swap(client, self.key))
+
+    @asynccontextmanager
+    async def replace(self, client: ClientType):
+        """Yield a detached staging index; publish it on success or drop it on failure."""
+        async with async_replace_context(self, client) as staging:
+            yield staging
 
     async def drop(self, client: ClientType) -> None:
         """Delete the key this index is bound to. A missing key is not an error."""

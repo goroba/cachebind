@@ -173,6 +173,16 @@ def test_sync_trie_storage_swap_renames_the_key() -> None:
     storage.drop(client, "trie_swap_missing")
 
 
+def test_sync_trie_storage_replace_overwrites_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    client.set("trie_staging", "staging")
+    client.set("trie_live", "live")
+    storage = RedisTrieStorage()
+    storage.replace(client, "trie_staging", "trie_live")
+    assert client.get("trie_staging") is None
+    assert client.get("trie_live") == "staging"
+
+
 def test_async_trie_storage_commands() -> None:
     async def scenario() -> None:
         client = AsyncScripted(replies=[1, ["Paris", "1"], 1, 0, 1, 0])

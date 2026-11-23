@@ -65,6 +65,10 @@ class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protocol):
         """Rename ``name`` aside and return the new name. A missing name still returns one."""
         ...
 
+    def replace(self, client: ClientType, source: str, dest: str) -> None:
+        """Rename ``source`` onto ``dest``. ``dest`` is overwritten atomically."""
+        ...
+
     def drop(self, client: ClientType, name: str) -> None:
         """Delete ``name``. A missing name is not an error."""
         ...

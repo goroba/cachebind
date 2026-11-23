@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 
-from cachebind.storage._redis import AsyncRedis, async_swap_key
+from cachebind.storage._redis import AsyncRedis, async_replace_key, async_swap_key
 from cachebind.storage.tries._reply import payloads_from_suggestions
 from cachebind.storage.tries._values import length_value, sugadd_command, sugget_command
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
@@ -76,6 +76,9 @@ class AsyncRedisTrieStorage(AsyncTrieStorage[AsyncRedis, str]):
 
     async def swap(self, client: AsyncRedis, name: str) -> str:
         return await async_swap_key(client, name)
+
+    async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:
+        await async_replace_key(client, source, dest)
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)

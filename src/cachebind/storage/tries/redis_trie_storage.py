@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 
-from cachebind.storage._redis import Redis, swap_key
+from cachebind.storage._redis import Redis, replace_key, swap_key
 from cachebind.storage.tries._reply import payloads_from_suggestions
 from cachebind.storage.tries._values import length_value, sugadd_command, sugget_command
 from cachebind.storage.tries.storage import TrieStorage
@@ -74,6 +74,9 @@ class RedisTrieStorage(TrieStorage[Redis, str]):
 
     def swap(self, client: Redis, name: str) -> str:
         return swap_key(client, name)
+
+    def replace(self, client: Redis, source: str, dest: str) -> None:
+        replace_key(client, source, dest)
 
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)

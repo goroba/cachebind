@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator, Sequence
 from cachebind.storage._redis import (
     SCAN_COUNT,
     AsyncRedis,
+    async_replace_key,
     async_swap_key,
     required_text,
     scan_done,
@@ -36,6 +37,9 @@ class AsyncRedisSetStorage(AsyncSetStorage[AsyncRedis, str]):
 
     async def swap(self, client: AsyncRedis, name: str) -> str:
         return await async_swap_key(client, name)
+
+    async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:
+        await async_replace_key(client, source, dest)
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)

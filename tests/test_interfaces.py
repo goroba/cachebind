@@ -181,6 +181,9 @@ class MemoryHash:
     def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
+    def replace(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -217,6 +220,9 @@ class AsyncMemoryHash:
     async def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
+    async def replace(self, client: object, source: str, dest: str) -> None:
+        return None
+
     async def drop(self, client: object, name: str) -> None:
         return None
 
@@ -244,6 +250,9 @@ class MemorySet:
     def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
+    def replace(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -269,6 +278,9 @@ class AsyncMemorySet:
 
     async def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
+
+    async def replace(self, client: object, source: str, dest: str) -> None:
+        return None
 
     async def drop(self, client: object, name: str) -> None:
         return None
@@ -322,6 +334,9 @@ class MemoryOrderedSet:
     def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
+    def replace(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -374,6 +389,9 @@ class AsyncMemoryOrderedSet:
 
     async def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
+
+    async def replace(self, client: object, source: str, dest: str) -> None:
+        return None
 
     async def drop(self, client: object, name: str) -> None:
         return None
@@ -429,6 +447,9 @@ class MemoryTrie:
     def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
 
+    def replace(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -478,6 +499,9 @@ class AsyncMemoryTrie:
 
     async def swap(self, client: object, name: str) -> str:
         return f"{name}:swap"
+
+    async def replace(self, client: object, source: str, dest: str) -> None:
+        return None
 
     async def drop(self, client: object, name: str) -> None:
         return None
