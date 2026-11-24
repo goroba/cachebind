@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Self, cast
 
 from cachebind.indexes._merge import merge_context
+from cachebind.indexes._update import update_context
 from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
@@ -108,6 +109,12 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
     def merge(self, client: ClientType):
         """Yield a detached staging index; merge it into live on success or drop it on failure."""
         with merge_context(self, client) as staging:
+            yield staging
+
+    @contextmanager
+    def update(self, client: ClientType):
+        """Yield a staging copy of live data; replace live on success or drop staging on failure."""
+        with update_context(self, client) as staging:
             yield staging
 
     def drop(self, client: ClientType) -> None:

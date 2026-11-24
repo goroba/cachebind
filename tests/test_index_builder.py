@@ -740,6 +740,40 @@ def test_hash_index_merge_empty_is_noop() -> None:
     assert index.get(client, 99) == 99
 
 
+def test_hash_index_update_commits_edited_copy() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "update_hash_users",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisHashStorage(),
+    )
+    from cachebind import UpdatableIndex
+
+    assert isinstance(index, UpdatableIndex)
+    index.set(client, 99, 99)
+    with index.update(client) as staging:
+        assert staging.get(client, 99) == 99
+        staging.set(client, 1, 10)
+    assert index.get(client, 1) == 10
+    assert index.get(client, 99) == 99
+
+
+def test_string_index_update_is_rejected() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "update_string_users",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisStringStorage(),
+    )
+    with pytest.raises(NotImplementedError):
+        with index.update(client):
+            pass
+
+
 def test_string_index_merge_is_rejected() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_key_value_index(

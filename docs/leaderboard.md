@@ -197,6 +197,20 @@ An empty `merge` block is a no-op. When the same member exists in staging and li
 
 `replace` still fits a full cutover: staging overwrites the live key atomically and an empty block clears the board. Prefer `merge` when concurrent `leaderboard.add` calls during the job must survive unless staging also lists that member.
 
+Use `update` when you want to change the current board in place: the block starts from a copy of live data on staging, you edit that copy, and on success staging replaces `leaderboard` atomically (same commit as `replace`). On failure, staging is dropped and live is unchanged. Choose `update` over `replace` when the job patches or trims an existing board instead of rebuilding from an empty staging key.
+
+| Context manager | Staging at enter | Success commit |
+|-----------------|------------------|----------------|
+| `replace` | empty | overwrite live |
+| `update` | copy of live | overwrite live |
+| `merge` | empty | combine into live |
+
+```python
+with leaderboard.update(client) as staging:
+    staging.remove(client, user_id, serializer=user_serializer)
+    staging.add(client, member=user_id, score=new_score, serializer=user_serializer)
+```
+
 ```python
 with leaderboard.merge(client) as staging:
     for user, score in load_leaderboard_rows(session):

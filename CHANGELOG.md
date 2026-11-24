@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `merge` index context manager: combine a detached staging build into the live key without overwriting unrelated entries.
+- `update` index context manager: copy live data into staging, edit, then publish with replace semantics.
 - `MergeableIndex` / `AsyncMergeableIndex` and `MergeableStorage` / `AsyncMergeableStorage` protocols.
+- `UpdatableIndex` / `AsyncUpdatableIndex` and `CopyableStorage` / `AsyncCopyableStorage` protocols.
 
 ## [1.1.2] - 2026-11-24
 

@@ -383,6 +383,22 @@ def test_async_set_index_snapshot_detaches_data() -> None:
     asyncio.run(scenario())
 
 
+def test_set_index_update_commits_edited_copy() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_set_index(
+        "update_active_users",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisSetStorage(),
+    )
+    index.add(client, 99)
+    with index.update(client) as staging:
+        assert staging.contains(client, 99) is True
+        staging.add(client, 1)
+    assert index.contains(client, 1) is True
+    assert index.contains(client, 99) is True
+
+
 def test_set_index_merge_preserves_live() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_set_index(

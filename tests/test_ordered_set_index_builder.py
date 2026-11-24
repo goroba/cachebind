@@ -622,6 +622,70 @@ def test_async_ordered_set_index_replace_publishes_staging() -> None:
     asyncio.run(scenario())
 
 
+def test_ordered_set_index_update_commits_edited_copy() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "update_leaderboard",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    from cachebind import UpdatableIndex
+
+    assert isinstance(index, UpdatableIndex)
+    index.add(client, 1, 99.0)
+    index.add(client, 99, 99.0)
+    staging_key: str | None = None
+    with index.update(client) as staging:
+        staging_key = staging.key
+        assert staging.key.startswith("update_leaderboard:update:")
+        assert staging.score(client, 1) == 99.0
+        assert staging.score(client, 99) == 99.0
+        assert index.score(client, 1) == 99.0
+        staging.add(client, 1, 10.0)
+    assert index.score(client, 1) == 10.0
+    assert index.score(client, 99) == 99.0
+    assert staging_key is not None
+    assert client.exists(staging_key) == 0
+
+
+def test_ordered_set_index_update_failure_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "update_leaderboard_fail",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    index.add(client, 99, 99.0)
+    staging_key: str | None = None
+    with pytest.raises(RuntimeError):
+        with index.update(client) as staging:
+            staging_key = staging.key
+            staging.add(client, 1, 10.0)
+            raise RuntimeError("update failed")
+    assert index.score(client, 99) == 99.0
+    assert index.score(client, 1) is None
+    assert staging_key is not None
+    assert client.exists(staging_key) == 0
+
+
+def test_ordered_set_index_update_noop_body_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "update_leaderboard_noop",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    index.add(client, 1, 10.0)
+    index.add(client, 99, 99.0)
+    with index.update(client):
+        pass
+    assert index.score(client, 1) == 10.0
+    assert index.score(client, 99) == 99.0
+
+
 def test_ordered_set_index_merge_preserves_live_and_collisions() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_ordered_set_index(

@@ -124,6 +124,15 @@ class TrieData:
             raise ValueError("source and dest must differ")
         self.data[dest] = self.data.pop(source, {})
 
+    def copy(self, source: str, dest: str) -> None:
+        self.calls.append("copy")
+        if source == dest:
+            raise ValueError("source and dest must differ")
+        bucket = self.data.get(source)
+        if bucket is None:
+            return
+        self.data[dest] = {key: value for key, value in bucket.items()}
+
 
 class MemoryTrie(TrieStorage[Spy, str]):
     def __init__(self, data: TrieData | None = None) -> None:
@@ -179,6 +188,9 @@ class MemoryTrie(TrieStorage[Spy, str]):
 
     def merge(self, client: Spy, source: str, dest: str) -> None:
         raise NotImplementedError("MemoryTrie cannot merge a suggestion dictionary")
+
+    def copy(self, client: Spy, source: str, dest: str) -> None:
+        self.data.copy(source, dest)
 
     def drop(self, client: Spy, name: str) -> None:
         self.data.drop(name)
@@ -238,6 +250,9 @@ class AsyncMemoryTrie(AsyncTrieStorage[AsyncSpy, str]):
 
     async def merge(self, client: AsyncSpy, source: str, dest: str) -> None:
         raise NotImplementedError("AsyncMemoryTrie cannot merge a suggestion dictionary")
+
+    async def copy(self, client: AsyncSpy, source: str, dest: str) -> None:
+        self.data.copy(source, dest)
 
     async def drop(self, client: AsyncSpy, name: str) -> None:
         self.data.drop(name)
@@ -592,6 +607,23 @@ def test_async_trie_index_snapshot_detaches_data() -> None:
         assert registry.get("async_swap_cities") is index
 
     asyncio.run(scenario())
+
+
+def test_trie_index_update_commits_edited_copy() -> None:
+    client = Spy()
+    index = build_trie_index(
+        "update_cities",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=MemoryTrie(),
+    )
+    index.add(client, "Old", 99, 99.0)
+    with index.update(client) as staging:
+        assert staging.length(client) == 1
+        assert index.length(client) == 1
+        staging.add(client, "Paris", 1, 900.0)
+    assert index.search(client, "P") == [1]
+    assert index.search(client, "O") == [99]
 
 
 def test_trie_index_merge_is_rejected() -> None:

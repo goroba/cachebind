@@ -58,7 +58,7 @@ def _missing_rename_source(exc: BaseException) -> bool:
     return "no such key" in str(exc).lower()
 
 
-def _commit_sync(index: Index, client: object, staging: Index) -> None:
+def _replace_sync(index: Index, client: object, staging: Index) -> None:
     registry = get_registry(index.client_type)
     if staging.key in registry:
         raise ValueError(
@@ -73,7 +73,7 @@ def _commit_sync(index: Index, client: object, staging: Index) -> None:
             raise
 
 
-async def _commit_async(index: Index, client: object, staging: Index) -> None:
+async def _replace_async(index: Index, client: object, staging: Index) -> None:
     registry = get_registry(index.client_type)
     if staging.key in registry:
         raise ValueError(
@@ -98,7 +98,7 @@ def replace_context(index: Index, client: object):
         staging.drop(client)
         raise
     else:
-        _commit_sync(index, client, staging)
+        _replace_sync(index, client, staging)
 
 
 @asynccontextmanager
@@ -111,7 +111,7 @@ async def async_replace_context(index: Index, client: object):
         await staging.drop(client)
         raise
     else:
-        await _commit_async(index, client, staging)
+        await _replace_async(index, client, staging)
 
 
 @contextmanager

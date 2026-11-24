@@ -5,6 +5,7 @@ from cachebind.indexes.droppable import AsyncDroppableIndex, DroppableIndex
 from cachebind.indexes.evictable import AsyncEvictableIndex, EvictableIndex
 from cachebind.indexes.iterable import AsyncIterableIndex, IterableIndex
 from cachebind.indexes.mergeable import AsyncMergeableIndex, MergeableIndex
+from cachebind.indexes.updatable import AsyncUpdatableIndex, UpdatableIndex
 from cachebind.indexes.replaceable import AsyncReplaceableIndex, ReplaceableIndex
 from cachebind.indexes.snapshotable import AsyncSnapshotableIndex, SnapshotableIndex
 from cachebind.indexes.key_value import (
@@ -42,6 +43,7 @@ __all__ = [
     "AsyncEvictableIndex",
     "AsyncIterableIndex",
     "AsyncMergeableIndex",
+    "AsyncUpdatableIndex",
     "AsyncReplaceableIndex",
     "AsyncSnapshotableIndex",
     "AsyncKeyValueIndex",
@@ -52,6 +54,7 @@ __all__ = [
     "EvictableIndex",
     "IterableIndex",
     "MergeableIndex",
+    "UpdatableIndex",
     "ReplaceableIndex",
     "SnapshotableIndex",
     "Index",
