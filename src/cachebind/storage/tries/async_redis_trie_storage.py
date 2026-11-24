@@ -80,5 +80,8 @@ class AsyncRedisTrieStorage(AsyncTrieStorage[AsyncRedis, str]):
     async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:
         await async_replace_key(client, source, dest)
 
+    async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
+        raise NotImplementedError(f"{type(self).__name__} cannot merge a suggestion dictionary")
+
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)

@@ -78,5 +78,8 @@ class RedisTrieStorage(TrieStorage[Redis, str]):
     def replace(self, client: Redis, source: str, dest: str) -> None:
         replace_key(client, source, dest)
 
+    def merge(self, client: Redis, source: str, dest: str) -> None:
+        raise NotImplementedError(f"{type(self).__name__} cannot merge a suggestion dictionary")
+
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)

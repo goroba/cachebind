@@ -60,6 +60,10 @@ class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
     async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:
         await async_replace_key(client, source, dest)
 
+    async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
+        async for field, value in self.iter(client, source):
+            await client.hset(dest, field, value)
+
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)
 

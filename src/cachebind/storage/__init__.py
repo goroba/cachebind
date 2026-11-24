@@ -9,6 +9,7 @@ from cachebind.storage.droppable import AsyncDroppableStorage, DroppableStorage
 from cachebind.storage.iterable import AsyncIterableStorage, IterableStorage
 from cachebind.storage.key_value import AsyncKeyValueStorage, KeyValueStorage
 from cachebind.storage.ordered_sets import AsyncOrderedSetStorage, OrderedSetStorage
+from cachebind.storage.mergeable import AsyncMergeableStorage, MergeableStorage
 from cachebind.storage.replaceable import AsyncReplaceableStorage, ReplaceableStorage
 from cachebind.storage.sets import AsyncSetStorage, SetStorage
 from cachebind.storage.snapshotable import AsyncSnapshotableStorage, SnapshotableStorage
@@ -19,6 +20,7 @@ __all__ = [
     "AsyncIterableStorage",
     "AsyncKeyValueStorage",
     "AsyncOrderedSetStorage",
+    "AsyncMergeableStorage",
     "AsyncReplaceableStorage",
     "AsyncRedisHashStorage",
     "AsyncRedisOrderedSetStorage",
@@ -32,6 +34,7 @@ __all__ = [
     "IterableStorage",
     "KeyValueStorage",
     "OrderedSetStorage",
+    "MergeableStorage",
     "ReplaceableStorage",
     "RedisHashStorage",
     "RedisOrderedSetStorage",

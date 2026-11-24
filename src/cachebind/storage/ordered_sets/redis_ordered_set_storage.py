@@ -74,6 +74,10 @@ class RedisOrderedSetStorage(OrderedSetStorage[Redis, str]):
     def replace(self, client: Redis, source: str, dest: str) -> None:
         replace_key(client, source, dest)
 
+    def merge(self, client: Redis, source: str, dest: str) -> None:
+        for member, score in self.iter(client, source):
+            client.zadd(dest, {member: score})
+
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)
 
