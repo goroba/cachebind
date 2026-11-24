@@ -4,6 +4,7 @@ from collections.abc import Hashable, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from typing import Self, cast
 
+from cachebind.indexes._merge import merge_context
 from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
@@ -101,6 +102,12 @@ class SetIndex[ClientType, MemberType, StorageType: Hashable](
     def replace(self, client: ClientType):
         """Yield a detached staging index; publish it on success or drop it on failure."""
         with replace_context(self, client) as staging:
+            yield staging
+
+    @contextmanager
+    def merge(self, client: ClientType):
+        """Yield a detached staging index; merge it into live on success or drop it on failure."""
+        with merge_context(self, client) as staging:
             yield staging
 
     def drop(self, client: ClientType) -> None:

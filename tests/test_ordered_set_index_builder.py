@@ -622,6 +622,90 @@ def test_async_ordered_set_index_replace_publishes_staging() -> None:
     asyncio.run(scenario())
 
 
+def test_ordered_set_index_merge_preserves_live_and_collisions() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "merge_leaderboard",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    from cachebind import MergeableIndex
+
+    assert isinstance(index, MergeableIndex)
+    index.add(client, 1, 99.0)
+    index.add(client, 99, 99.0)
+    staging_key: str | None = None
+    with index.merge(client) as staging:
+        staging_key = staging.key
+        assert staging.key.startswith("merge_leaderboard:merge:")
+        assert index.score(client, 99) == 99.0
+        staging.add(client, 1, 10.0)
+        staging.add(client, 2, 20.0)
+    assert index.score(client, 1) == 10.0
+    assert index.score(client, 2) == 20.0
+    assert index.score(client, 99) == 99.0
+    assert staging_key is not None
+    assert client.exists(staging_key) == 0
+
+
+def test_ordered_set_index_merge_failure_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "merge_leaderboard_fail",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    index.add(client, 99, 99.0)
+    staging_key: str | None = None
+    with pytest.raises(RuntimeError):
+        with index.merge(client) as staging:
+            staging_key = staging.key
+            staging.add(client, 1, 1.0)
+            raise RuntimeError("merge failed")
+    assert index.score(client, 99) == 99.0
+    assert index.score(client, 1) is None
+    assert staging_key is not None
+    assert client.exists(staging_key) == 0
+
+
+def test_ordered_set_index_merge_empty_is_noop() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_ordered_set_index(
+        "merge_leaderboard_empty",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisOrderedSetStorage(),
+    )
+    index.add(client, 99, 99.0)
+    with index.merge(client):
+        pass
+    assert index.score(client, 99) == 99.0
+
+
+def test_async_ordered_set_index_merge_preserves_live() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        index = build_async_ordered_set_index(
+            "async_merge_leaderboard",
+            member_type=int,
+            serializer=IntSerializer(),
+            storage=AsyncRedisOrderedSetStorage(),
+        )
+        from cachebind import AsyncMergeableIndex
+
+        assert isinstance(index, AsyncMergeableIndex)
+        await index.add(client, 99, 99.0)
+        async with index.merge(client) as staging:
+            await staging.add(client, 1, 10.0)
+        assert await index.score(client, 1) == 10.0
+        assert await index.score(client, 99) == 99.0
+        await client.aclose()
+
+    asyncio.run(scenario())
+
+
 def test_async_ordered_set_index_replace_failure_drops_staging() -> None:
     async def scenario() -> None:
         client = fakeredis.FakeAsyncRedis(decode_responses=True)

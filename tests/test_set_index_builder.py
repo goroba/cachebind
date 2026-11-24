@@ -383,6 +383,40 @@ def test_async_set_index_snapshot_detaches_data() -> None:
     asyncio.run(scenario())
 
 
+def test_set_index_merge_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_set_index(
+        "merge_active_users",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisSetStorage(),
+    )
+    from cachebind import MergeableIndex
+
+    assert isinstance(index, MergeableIndex)
+    index.add(client, 99)
+    with index.merge(client) as staging:
+        staging.add(client, 1)
+        staging.add(client, 2)
+    assert index.contains(client, 1) is True
+    assert index.contains(client, 2) is True
+    assert index.contains(client, 99) is True
+
+
+def test_set_index_merge_empty_is_noop() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_set_index(
+        "merge_active_users_empty",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=RedisSetStorage(),
+    )
+    index.add(client, 99)
+    with index.merge(client):
+        pass
+    assert index.contains(client, 99) is True
+
+
 def test_set_index_replace_publishes_staging() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_set_index(

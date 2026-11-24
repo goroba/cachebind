@@ -4,6 +4,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Hashable, Iterator, Se
 from contextlib import asynccontextmanager
 from typing import Self, cast
 
+from cachebind.indexes._merge import async_merge_context
 from cachebind.indexes._replace import async_replace_context, async_snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
@@ -191,6 +192,12 @@ class AsyncOrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
     async def replace(self, client: ClientType):
         """Yield a detached staging index; publish it on success or drop it on failure."""
         async with async_replace_context(self, client) as staging:
+            yield staging
+
+    @asynccontextmanager
+    async def merge(self, client: ClientType):
+        """Yield a detached staging index; merge it into live on success or drop it on failure."""
+        async with async_merge_context(self, client) as staging:
             yield staging
 
     async def drop(self, client: ClientType) -> None:

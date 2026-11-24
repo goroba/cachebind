@@ -187,7 +187,23 @@ On success, staging is renamed onto `leaderboard` atomically. On failure, only t
 
 `snapshot` does the opposite move: use it as a context manager to rename the live key aside for a flush. See [Write-Back Caching example](write-back-caching.md).
 
-While the job runs, `leaderboard.add` still updates the old board. Those writes disappear when the rebuild publishes unless you merge them at the application layer.
+While the job runs, `leaderboard.add` still updates the old board. Those writes disappear when the rebuild publishes unless you use `merge` below.
+
+## Incremental publish
+
+Use `merge` when the live board should stay readable and keep members that are not part of the batch. It yields a detached staging index on a separate Redis key, like `replace`. On success, staging is combined into `leaderboard`; live members that staging does not mention are unchanged. On failure, only the staging key is dropped.
+
+An empty `merge` block is a no-op. When the same member exists in staging and live, the staging score wins on commit.
+
+`replace` still fits a full cutover: staging overwrites the live key atomically and an empty block clears the board. Prefer `merge` when concurrent `leaderboard.add` calls during the job must survive unless staging also lists that member.
+
+```python
+with leaderboard.merge(client) as staging:
+    for user, score in load_leaderboard_rows(session):
+        staging.add(client, member=user, score=score, serializer=user_serializer)
+```
+
+Async indexes support `async with leaderboard.merge(client) as staging` the same way as `replace`.
 
 ```python
 from sqlalchemy import select

@@ -177,6 +177,9 @@ class MemoryTrie(TrieStorage[Spy, str]):
     def replace(self, client: Spy, source: str, dest: str) -> None:
         self.data.replace(source, dest)
 
+    def merge(self, client: Spy, source: str, dest: str) -> None:
+        raise NotImplementedError("MemoryTrie cannot merge a suggestion dictionary")
+
     def drop(self, client: Spy, name: str) -> None:
         self.data.drop(name)
 
@@ -232,6 +235,9 @@ class AsyncMemoryTrie(AsyncTrieStorage[AsyncSpy, str]):
 
     async def replace(self, client: AsyncSpy, source: str, dest: str) -> None:
         self.data.replace(source, dest)
+
+    async def merge(self, client: AsyncSpy, source: str, dest: str) -> None:
+        raise NotImplementedError("AsyncMemoryTrie cannot merge a suggestion dictionary")
 
     async def drop(self, client: AsyncSpy, name: str) -> None:
         self.data.drop(name)
@@ -586,6 +592,19 @@ def test_async_trie_index_snapshot_detaches_data() -> None:
         assert registry.get("async_swap_cities") is index
 
     asyncio.run(scenario())
+
+
+def test_trie_index_merge_is_rejected() -> None:
+    client = Spy()
+    index = build_trie_index(
+        "merge_cities",
+        member_type=int,
+        serializer=IntSerializer(),
+        storage=MemoryTrie(),
+    )
+    with pytest.raises(NotImplementedError):
+        with index.merge(client):
+            pass
 
 
 def test_trie_index_replace_publishes_staging() -> None:

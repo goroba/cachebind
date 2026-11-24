@@ -686,6 +686,74 @@ def test_async_hash_index_replace_publishes_staging() -> None:
     asyncio.run(scenario())
 
 
+def test_hash_index_merge_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "merge_hash_users",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisHashStorage(),
+    )
+    from cachebind import MergeableIndex
+
+    assert isinstance(index, MergeableIndex)
+    index.set(client, 99, 99)
+    with index.merge(client) as staging:
+        assert index.get(client, 99) == 99
+        staging.set(client, 1, 10)
+        staging.set(client, 99, 10)
+    assert index.get(client, 1) == 10
+    assert index.get(client, 99) == 10
+
+
+def test_hash_index_merge_failure_preserves_live() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "merge_hash_users_fail",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisHashStorage(),
+    )
+    index.set(client, 99, 99)
+    with pytest.raises(RuntimeError):
+        with index.merge(client) as staging:
+            staging.set(client, 1, 1)
+            raise RuntimeError
+    assert index.get(client, 99) == 99
+    assert index.get(client, 1) is None
+
+
+def test_hash_index_merge_empty_is_noop() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "merge_hash_users_empty",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisHashStorage(),
+    )
+    index.set(client, 99, 99)
+    with index.merge(client):
+        pass
+    assert index.get(client, 99) == 99
+
+
+def test_string_index_merge_is_rejected() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    index = build_key_value_index(
+        "merge_string_users",
+        id_type=int,
+        model_type=int,
+        serializer=IntSerializer(),
+        storage=RedisStringStorage(),
+    )
+    with pytest.raises(NotImplementedError):
+        with index.merge(client):
+            pass
+
+
 def test_string_index_replace_is_rejected() -> None:
     client = fakeredis.FakeRedis(decode_responses=True)
     index = build_key_value_index(
