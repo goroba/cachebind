@@ -17,5 +17,11 @@ redis = ["redis>=5"]
 pydantic = ["pydantic>=2"]
 dev = ["pytest>=8", "fakeredis>=2", "pydantic>=2"]
 
+[project.urls]
+Homepage = "https://github.com/goroba/cachebind"
+Documentation = "https://github.com/goroba/cachebind/tree/main/docs"
+Repository = "https://github.com/goroba/cachebind.git"
+Changelog = "https://github.com/goroba/cachebind/blob/main/CHANGELOG.md"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

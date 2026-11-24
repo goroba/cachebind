@@ -6,8 +6,6 @@ A Python library that names a cache binding — one storage key, a serializer, a
 
 **What can an index store?** A key-value index stores one model per id. A set index stores members in one set. An ordered set index stores members with scores, lowest score first. A trie index stores suggestion strings with scores and keeps each member as the payload. `search` returns those members in rank order. Each has a sync builder and an async builder.
 
-**Repository:** [github.com/goroba/cachebind](https://github.com/goroba/cachebind)
-
 ## Indexes
 
 Build an index once with `build_async_key_value_index`, `build_async_set_index`, `build_async_ordered_set_index`, or `build_async_trie_index`. Pass a key, the value type, a serializer instance, and a storage instance. Optionally pass `breadcrumbs` (default `ColonBreadcrumbs`) on key-value, set, and ordered-set builders. Trie indexes always use `NoopBreadcrumbs` and do not accept `breadcrumbs`. Then pass a storage client into every call.
