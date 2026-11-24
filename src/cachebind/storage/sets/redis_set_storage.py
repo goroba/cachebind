@@ -41,6 +41,11 @@ class RedisSetStorage(SetStorage[Redis, str]):
     def replace(self, client: Redis, source: str, dest: str) -> None:
         replace_key(client, source, dest)
 
+    def copy(self, client: Redis, source: str, dest: str) -> None:
+        if source == dest:
+            raise ValueError("source and dest must differ")
+        client.sunionstore(dest, source)
+
     def merge(self, client: Redis, source: str, dest: str) -> None:
         if source == dest:
             raise ValueError("source and dest must differ")

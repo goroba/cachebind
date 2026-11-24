@@ -76,6 +76,10 @@ class AsyncRedisOrderedSetStorage(AsyncOrderedSetStorage[AsyncRedis, str]):
     async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:
         await async_replace_key(client, source, dest)
 
+    async def copy(self, client: AsyncRedis, source: str, dest: str) -> None:
+        async for member, score in self.iter(client, source):
+            await client.zadd(dest, {member: score})
+
     async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
         async for member, score in self.iter(client, source):
             await client.zadd(dest, {member: score})

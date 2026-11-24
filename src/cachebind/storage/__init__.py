@@ -5,6 +5,7 @@ Protocols do not require Redis. Importing a Redis storage class requires the ``r
 
 import importlib
 
+from cachebind.storage.copyable import AsyncCopyableStorage, CopyableStorage
 from cachebind.storage.droppable import AsyncDroppableStorage, DroppableStorage
 from cachebind.storage.iterable import AsyncIterableStorage, IterableStorage
 from cachebind.storage.key_value import AsyncKeyValueStorage, KeyValueStorage
@@ -16,6 +17,7 @@ from cachebind.storage.snapshotable import AsyncSnapshotableStorage, Snapshotabl
 from cachebind.storage.tries import AsyncTrieStorage, TrieStorage
 
 __all__ = [
+    "AsyncCopyableStorage",
     "AsyncDroppableStorage",
     "AsyncIterableStorage",
     "AsyncKeyValueStorage",
@@ -30,6 +32,7 @@ __all__ = [
     "AsyncSetStorage",
     "AsyncSnapshotableStorage",
     "AsyncTrieStorage",
+    "CopyableStorage",
     "DroppableStorage",
     "IterableStorage",
     "KeyValueStorage",

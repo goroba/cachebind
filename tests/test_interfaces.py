@@ -9,6 +9,7 @@ from cachebind import (
     AsyncKeyValueIndex,
     AsyncKeyValueStorage,
     AsyncOrderedSetStorage,
+    AsyncCopyableStorage,
     AsyncMergeableStorage,
     AsyncReplaceableStorage,
     AsyncSetStorage,
@@ -20,6 +21,7 @@ from cachebind import (
     KeyValueIndex,
     KeyValueStorage,
     OrderedSetStorage,
+    CopyableStorage,
     MergeableStorage,
     ReplaceableStorage,
     SetStorage,
@@ -197,6 +199,9 @@ class MemoryHash:
     def merge(self, client: object, source: str, dest: str) -> None:
         return None
 
+    def copy(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -239,6 +244,9 @@ class AsyncMemoryHash:
     async def merge(self, client: object, source: str, dest: str) -> None:
         return None
 
+    async def copy(self, client: object, source: str, dest: str) -> None:
+        return None
+
     async def drop(self, client: object, name: str) -> None:
         return None
 
@@ -272,6 +280,9 @@ class MemorySet:
     def merge(self, client: object, source: str, dest: str) -> None:
         return None
 
+    def copy(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -302,6 +313,9 @@ class AsyncMemorySet:
         return None
 
     async def merge(self, client: object, source: str, dest: str) -> None:
+        return None
+
+    async def copy(self, client: object, source: str, dest: str) -> None:
         return None
 
     async def drop(self, client: object, name: str) -> None:
@@ -362,6 +376,9 @@ class MemoryOrderedSet:
     def merge(self, client: object, source: str, dest: str) -> None:
         return None
 
+    def copy(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -419,6 +436,9 @@ class AsyncMemoryOrderedSet:
         return None
 
     async def merge(self, client: object, source: str, dest: str) -> None:
+        return None
+
+    async def copy(self, client: object, source: str, dest: str) -> None:
         return None
 
     async def drop(self, client: object, name: str) -> None:
@@ -481,6 +501,9 @@ class MemoryTrie:
     def merge(self, client: object, source: str, dest: str) -> None:
         raise NotImplementedError("MemoryTrie cannot merge a suggestion dictionary")
 
+    def copy(self, client: object, source: str, dest: str) -> None:
+        return None
+
     def drop(self, client: object, name: str) -> None:
         return None
 
@@ -537,6 +560,9 @@ class AsyncMemoryTrie:
     async def merge(self, client: object, source: str, dest: str) -> None:
         raise NotImplementedError("AsyncMemoryTrie cannot merge a suggestion dictionary")
 
+    async def copy(self, client: object, source: str, dest: str) -> None:
+        return None
+
     async def drop(self, client: object, name: str) -> None:
         return None
 
@@ -576,11 +602,13 @@ def test_storage_protocols() -> None:
     assert isinstance(kv, SnapshotableStorage)
     assert isinstance(kv, ReplaceableStorage)
     assert isinstance(kv, MergeableStorage)
+    assert isinstance(kv, CopyableStorage)
     assert isinstance(kv, DroppableStorage)
     assert isinstance(kv, IterableStorage)
     assert isinstance(async_kv, AsyncSnapshotableStorage)
     assert isinstance(async_kv, AsyncReplaceableStorage)
     assert isinstance(async_kv, AsyncMergeableStorage)
+    assert isinstance(async_kv, AsyncCopyableStorage)
     assert isinstance(async_kv, AsyncDroppableStorage)
     assert isinstance(async_kv, AsyncIterableStorage)
 

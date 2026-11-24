@@ -41,6 +41,11 @@ class AsyncRedisSetStorage(AsyncSetStorage[AsyncRedis, str]):
     async def replace(self, client: AsyncRedis, source: str, dest: str) -> None:
         await async_replace_key(client, source, dest)
 
+    async def copy(self, client: AsyncRedis, source: str, dest: str) -> None:
+        if source == dest:
+            raise ValueError("source and dest must differ")
+        await client.sunionstore(dest, source)
+
     async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
         if source == dest:
             raise ValueError("source and dest must differ")

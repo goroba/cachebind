@@ -60,6 +60,10 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
     def replace(self, client: Redis, source: str, dest: str) -> None:
         replace_key(client, source, dest)
 
+    def copy(self, client: Redis, source: str, dest: str) -> None:
+        for field, value in self.iter(client, source):
+            client.hset(dest, field, value)
+
     def merge(self, client: Redis, source: str, dest: str) -> None:
         for field, value in self.iter(client, source):
             client.hset(dest, field, value)

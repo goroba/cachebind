@@ -71,6 +71,11 @@ class AsyncRedisStringStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
             f"{type(self).__name__} keeps one Redis key per field and cannot merge"
         )
 
+    async def copy(self, client: AsyncRedis, source: str, dest: str) -> None:
+        raise NotImplementedError(
+            f"{type(self).__name__} keeps one Redis key per field and cannot copy"
+        )
+
     async def drop(self, client: AsyncRedis, name: str) -> None:
         raise NotImplementedError(
             f"{type(self).__name__} keeps one Redis key per field and cannot drop"
