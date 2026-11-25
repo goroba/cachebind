@@ -2,7 +2,7 @@
 
 from collections.abc import AsyncIterator, Mapping, Sequence
 
-from cachebind.storage._redis import AsyncRedis, decode
+from cachebind.backends.redis import AsyncRedis, decode
 from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
 
 

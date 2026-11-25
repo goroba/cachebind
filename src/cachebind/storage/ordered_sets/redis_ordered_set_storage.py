@@ -2,13 +2,16 @@
 
 from collections.abc import Iterator, Sequence
 
-from cachebind.storage._redis import SCAN_COUNT, Redis, replace_key, swap_key
-from cachebind.storage.ordered_sets._values import (
+from cachebind.backends.redis import (
+    SCAN_COUNT,
+    Redis,
     empty_range,
     members_from_range,
     pairs_from_range,
     rank_value,
+    replace_key,
     score_value,
+    swap_key,
 )
 from cachebind.storage.ordered_sets.storage import OrderedSetStorage
 

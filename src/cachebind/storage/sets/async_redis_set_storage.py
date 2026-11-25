@@ -2,7 +2,7 @@
 
 from collections.abc import AsyncIterator, Sequence
 
-from cachebind.storage._redis import (
+from cachebind.backends.redis import (
     SCAN_COUNT,
     AsyncRedis,
     async_replace_key,

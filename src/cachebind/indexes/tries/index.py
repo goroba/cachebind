@@ -9,7 +9,7 @@ from cachebind.indexes._update import update_context
 from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes.tries.base import TrieBase
-from cachebind.storage.tries._values import check_limit
+from cachebind.backends.redis import check_limit
 from cachebind.storage.tries.storage import TrieStorage
 
 

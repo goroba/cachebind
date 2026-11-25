@@ -2,7 +2,7 @@
 
 from collections.abc import Iterator, Mapping, Sequence
 
-from cachebind.storage._redis import (
+from cachebind.backends.redis import (
     SCAN_COUNT,
     Redis,
     decode,

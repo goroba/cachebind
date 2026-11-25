@@ -2,9 +2,16 @@
 
 from collections.abc import Sequence
 
-from cachebind.storage._redis import Redis, copy_key, replace_key, swap_key
-from cachebind.storage.tries._reply import payloads_from_suggestions
-from cachebind.storage.tries._values import length_value, sugadd_command, sugget_command
+from cachebind.backends.redis import (
+    Redis,
+    copy_key,
+    length_value,
+    payloads_from_suggestions,
+    replace_key,
+    sugadd_command,
+    sugget_command,
+    swap_key,
+)
 from cachebind.storage.tries.storage import TrieStorage
 
 

@@ -1,6 +1,6 @@
 """Decode Redis ordered-set members, scores, and ranks."""
 
-from cachebind.storage._redis import decode
+from cachebind.backends.redis.decode import decode
 
 
 def empty_range(start: int, stop: int) -> bool:

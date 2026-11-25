@@ -2,9 +2,16 @@
 
 from collections.abc import Sequence
 
-from cachebind.storage._redis import AsyncRedis, async_copy_key, async_replace_key, async_swap_key
-from cachebind.storage.tries._reply import payloads_from_suggestions
-from cachebind.storage.tries._values import length_value, sugadd_command, sugget_command
+from cachebind.backends.redis import (
+    AsyncRedis,
+    async_copy_key,
+    async_replace_key,
+    async_swap_key,
+    length_value,
+    payloads_from_suggestions,
+    sugadd_command,
+    sugget_command,
+)
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
 
 

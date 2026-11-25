@@ -1,4 +1,6 @@
-"""Decode Redis suggestion replies and build suggestion commands."""
+"""Redis suggestion-dictionary (FT.SUG*) wire helpers."""
+
+from cachebind.backends.redis.decode import required_text
 
 DEFAULT_LIMIT = 10
 
@@ -34,3 +36,20 @@ def length_value(value: object) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"unexpected Redis suggestion length type: {type(value).__name__}")
     return value
+
+
+def payloads_from_suggestions(raw: object) -> list[str]:
+    """Return payloads from a flat suggestion reply of string, payload, string, payload."""
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise TypeError(f"unexpected Redis suggestion type: {type(raw).__name__}")
+    if len(raw) % 2 != 0:
+        raise TypeError(f"unexpected Redis suggestion reply length: {len(raw)}")
+    payloads: list[str] = []
+    for index in range(0, len(raw), 2):
+        payload = raw[index + 1]
+        if payload is None:
+            raise ValueError("trie suggestion has no payload")
+        payloads.append(required_text(payload))
+    return payloads
