@@ -5,11 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.1] - 2026-11-25
+
+### Added
+
+- `docs/architecture.md` describing layers and the `cachebind.backends.redis` package.
 
 ### Changed
 
-- Redis hash and ordered-set `copy`/`merge` use batched pipelines (and `COPY` when `copy` targets an absent key).
+- Redis wire helpers, key operations, and copy/merge logic live under `cachebind.backends.redis`; storage adapters delegate to it.
+- Redis hash, set, ordered-set, and trie `copy`/`merge` use batched pipelines; absent-key clones use `DUMP`/`RESTORE` for an independent copy.
+
+### Fixed
+
+- Staging keys for `update` and related flows stay isolated from live data when the Redis client does not provide a true `COPY` (for example fakeredis).
 
 ## [1.2.0] - 2026-11-24
 
@@ -78,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional serializers on index actions; `NoopSerializer`.
 - Write-back caching documentation example.
 
+[1.2.1]: https://github.com/goroba/cachebind/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/goroba/cachebind/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/goroba/cachebind/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/goroba/cachebind/compare/v1.1.0...v1.1.1

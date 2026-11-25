@@ -47,24 +47,20 @@ def copy_key(client: Redis, source: str, dest: str) -> None:
     """Duplicate ``source`` onto ``dest``. A missing ``source`` is a no-op."""
     if source == dest:
         raise ValueError("source and dest must differ")
-    try:
-        client.copy(source, dest)
-    except ResponseError as exc:
-        if "no such key" in str(exc).lower():
-            return
-        raise
+    payload = client.dump(source)
+    if payload is None:
+        return
+    client.restore(dest, 0, payload, replace=True)
 
 
 async def async_copy_key(client: AsyncRedis, source: str, dest: str) -> None:
     """Duplicate ``source`` onto ``dest``. A missing ``source`` is a no-op."""
     if source == dest:
         raise ValueError("source and dest must differ")
-    try:
-        await client.copy(source, dest)
-    except ResponseError as exc:
-        if "no such key" in str(exc).lower():
-            return
-        raise
+    payload = await client.dump(source)
+    if payload is None:
+        return
+    await client.restore(dest, 0, payload, replace=True)
 
 
 __all__ = [
