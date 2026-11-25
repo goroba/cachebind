@@ -206,3 +206,76 @@ def test_async_ordered_set_storage_iter_is_ascending() -> None:
             await client.aclose()
 
     asyncio.run(scenario())
+
+
+def test_sync_ordered_set_storage_copy_clones_absent_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisOrderedSetStorage()
+    storage.madd(client, "source", [("1", 1.0), ("2", 2.0), ("3", 3.0)])
+
+    storage.copy(client, "source", "dest")
+    assert storage.range_with_scores(client, "dest", 0, -1) == [
+        ("1", 1.0),
+        ("2", 2.0),
+        ("3", 3.0),
+    ]
+
+
+def test_sync_ordered_set_storage_copy_overlays_existing_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisOrderedSetStorage()
+    storage.madd(client, "source", [("a", 5.0), ("b", 2.0)])
+    storage.madd(client, "dest", [("a", 1.0), ("z", 9.0)])
+
+    storage.copy(client, "source", "dest")
+    assert storage.score(client, "dest", "a") == 5.0
+    assert storage.score(client, "dest", "b") == 2.0
+    assert storage.score(client, "dest", "z") == 9.0
+
+
+def test_sync_ordered_set_storage_merge_overwrites_dest_members() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisOrderedSetStorage()
+    storage.madd(client, "source", [("a", 5.0), ("b", 2.0)])
+    storage.madd(client, "dest", [("a", 1.0), ("c", 3.0)])
+
+    storage.merge(client, "source", "dest")
+    assert storage.range_with_scores(client, "dest", 0, -1) == [
+        ("b", 2.0),
+        ("c", 3.0),
+        ("a", 5.0),
+    ]
+
+
+def test_sync_ordered_set_storage_copy_missing_source_leaves_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisOrderedSetStorage()
+    storage.madd(client, "dest", [("a", 1.0)])
+
+    storage.copy(client, "missing", "dest")
+    assert storage.score(client, "dest", "a") == 1.0
+
+
+def test_async_ordered_set_storage_copy_and_merge() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        storage = AsyncRedisOrderedSetStorage()
+        try:
+            await storage.madd(client, "source", [("1", 1.0), ("2", 2.0), ("3", 3.0)])
+            await storage.copy(client, "source", "dest")
+            assert await storage.range_with_scores(client, "dest", 0, -1) == [
+                ("1", 1.0),
+                ("2", 2.0),
+                ("3", 3.0),
+            ]
+
+            await storage.madd(client, "staging", [("2", 9.0)])
+            await storage.merge(client, "staging", "dest")
+            assert await storage.score(client, "dest", "2") == 9.0
+
+            await storage.copy(client, "missing", "dest")
+            assert await storage.score(client, "dest", "1") == 1.0
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())

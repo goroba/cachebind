@@ -201,3 +201,63 @@ def test_async_hash_storage_iter_pages_every_field() -> None:
             await client.aclose()
 
     asyncio.run(scenario())
+
+
+def test_sync_hash_storage_copy_clones_absent_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisHashStorage()
+    storage.mset(client, "source", {"1": "a", "2": "b", "3": "c"})
+
+    storage.copy(client, "source", "dest")
+    assert set(storage.iter(client, "dest", count=2)) == {("1", "a"), ("2", "b"), ("3", "c")}
+
+
+def test_sync_hash_storage_copy_overlays_existing_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisHashStorage()
+    storage.mset(client, "source", {"1": "new", "2": "b"})
+    storage.mset(client, "dest", {"1": "old", "9": "keep"})
+
+    storage.copy(client, "source", "dest")
+    assert storage.mget(client, "dest", ["1", "2", "9"]) == ["new", "b", "keep"]
+
+
+def test_sync_hash_storage_merge_overwrites_dest_fields() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisHashStorage()
+    storage.mset(client, "source", {"1": "staging", "2": "b"})
+    storage.mset(client, "dest", {"1": "live", "3": "c"})
+
+    storage.merge(client, "source", "dest")
+    assert storage.mget(client, "dest", ["1", "2", "3"]) == ["staging", "b", "c"]
+
+
+def test_sync_hash_storage_copy_missing_source_leaves_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisHashStorage()
+    storage.mset(client, "dest", {"1": "keep"})
+
+    storage.copy(client, "missing", "dest")
+    assert storage.get(client, "dest", "1") == "keep"
+
+
+def test_async_hash_storage_copy_and_merge() -> None:
+    async def scenario() -> None:
+        client = fakeredis.FakeAsyncRedis(decode_responses=True)
+        storage = AsyncRedisHashStorage()
+        try:
+            await storage.mset(client, "source", {"1": "a", "2": "b", "3": "c"})
+            await storage.copy(client, "source", "dest")
+            found = {item async for item in storage.iter(client, "dest", count=2)}
+            assert found == {("1", "a"), ("2", "b"), ("3", "c")}
+
+            await storage.mset(client, "staging", {"2": "new"})
+            await storage.merge(client, "staging", "dest")
+            assert await storage.mget(client, "dest", ["1", "2", "3"]) == ["a", "new", "c"]
+
+            await storage.copy(client, "missing", "dest")
+            assert await storage.mget(client, "dest", ["1", "2", "3"]) == ["a", "new", "c"]
+        finally:
+            await client.aclose()
+
+    asyncio.run(scenario())

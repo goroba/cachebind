@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from cachebind.backends.redis import (
     AsyncRedis,
-    async_copy_key,
+    async_copy_trie,
     async_replace_key,
     async_swap_key,
     length_value,
@@ -88,7 +88,7 @@ class AsyncRedisTrieStorage(AsyncTrieStorage[AsyncRedis, str]):
         await async_replace_key(client, source, dest)
 
     async def copy(self, client: AsyncRedis, source: str, dest: str) -> None:
-        await async_copy_key(client, source, dest)
+        await async_copy_trie(client, source, dest)
 
     async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
         raise NotImplementedError(f"{type(self).__name__} cannot merge a suggestion dictionary")

@@ -5,6 +5,8 @@ from collections.abc import Iterator, Sequence
 from cachebind.backends.redis import (
     SCAN_COUNT,
     Redis,
+    copy_set,
+    merge_set,
     replace_key,
     required_text,
     scan_done,
@@ -42,14 +44,10 @@ class RedisSetStorage(SetStorage[Redis, str]):
         replace_key(client, source, dest)
 
     def copy(self, client: Redis, source: str, dest: str) -> None:
-        if source == dest:
-            raise ValueError("source and dest must differ")
-        client.sunionstore(dest, source)
+        copy_set(client, source, dest)
 
     def merge(self, client: Redis, source: str, dest: str) -> None:
-        if source == dest:
-            raise ValueError("source and dest must differ")
-        client.sunionstore(dest, dest, source)
+        merge_set(client, source, dest)
 
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)

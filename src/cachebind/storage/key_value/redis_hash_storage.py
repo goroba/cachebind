@@ -5,7 +5,9 @@ from collections.abc import Iterator, Mapping, Sequence
 from cachebind.backends.redis import (
     SCAN_COUNT,
     Redis,
+    copy_hash,
     decode,
+    merge_hash,
     replace_key,
     required_text,
     scan_done,
@@ -61,12 +63,10 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
         replace_key(client, source, dest)
 
     def copy(self, client: Redis, source: str, dest: str) -> None:
-        for field, value in self.iter(client, source):
-            client.hset(dest, field, value)
+        copy_hash(client, source, dest)
 
     def merge(self, client: Redis, source: str, dest: str) -> None:
-        for field, value in self.iter(client, source):
-            client.hset(dest, field, value)
+        merge_hash(client, source, dest)
 
     def drop(self, client: Redis, name: str) -> None:
         client.delete(name)

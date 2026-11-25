@@ -5,8 +5,11 @@ from collections.abc import AsyncIterator, Sequence
 from cachebind.backends.redis import (
     SCAN_COUNT,
     AsyncRedis,
+    async_copy_zset,
+    async_merge_zset,
     async_replace_key,
     async_swap_key,
+    async_zset_windows,
     empty_range,
     members_from_range,
     pairs_from_range,
@@ -80,12 +83,10 @@ class AsyncRedisOrderedSetStorage(AsyncOrderedSetStorage[AsyncRedis, str]):
         await async_replace_key(client, source, dest)
 
     async def copy(self, client: AsyncRedis, source: str, dest: str) -> None:
-        async for member, score in self.iter(client, source):
-            await client.zadd(dest, {member: score})
+        await async_copy_zset(client, source, dest)
 
     async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
-        async for member, score in self.iter(client, source):
-            await client.zadd(dest, {member: score})
+        await async_merge_zset(client, source, dest)
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)
@@ -93,13 +94,6 @@ class AsyncRedisOrderedSetStorage(AsyncOrderedSetStorage[AsyncRedis, str]):
     async def iter(
         self, client: AsyncRedis, name: str, *, count: int = SCAN_COUNT
     ) -> AsyncIterator[tuple[str, float]]:
-        start = 0
-        while True:
-            window = await self.range_with_scores(client, name, start, start + count - 1)
-            if not window:
-                return
+        async for window in async_zset_windows(client, name, count=count):
             for member, score in window:
                 yield member, score
-            if len(window) < count:
-                return
-            start += count

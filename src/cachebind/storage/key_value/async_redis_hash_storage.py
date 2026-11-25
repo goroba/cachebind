@@ -5,6 +5,8 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from cachebind.backends.redis import (
     SCAN_COUNT,
     AsyncRedis,
+    async_copy_hash,
+    async_merge_hash,
     async_replace_key,
     async_swap_key,
     decode,
@@ -61,12 +63,10 @@ class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
         await async_replace_key(client, source, dest)
 
     async def copy(self, client: AsyncRedis, source: str, dest: str) -> None:
-        async for field, value in self.iter(client, source):
-            await client.hset(dest, field, value)
+        await async_copy_hash(client, source, dest)
 
     async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
-        async for field, value in self.iter(client, source):
-            await client.hset(dest, field, value)
+        await async_merge_hash(client, source, dest)
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)

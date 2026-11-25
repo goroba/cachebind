@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from cachebind.backends.redis import (
     Redis,
-    copy_key,
+    copy_trie,
     length_value,
     payloads_from_suggestions,
     replace_key,
@@ -86,7 +86,7 @@ class RedisTrieStorage(TrieStorage[Redis, str]):
         replace_key(client, source, dest)
 
     def copy(self, client: Redis, source: str, dest: str) -> None:
-        copy_key(client, source, dest)
+        copy_trie(client, source, dest)
 
     def merge(self, client: Redis, source: str, dest: str) -> None:
         raise NotImplementedError(f"{type(self).__name__} cannot merge a suggestion dictionary")

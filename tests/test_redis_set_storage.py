@@ -128,3 +128,22 @@ def test_async_set_storage_iter_pages_every_member() -> None:
             await client.aclose()
 
     asyncio.run(scenario())
+
+
+def test_sync_set_storage_copy_clones_absent_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisSetStorage()
+    storage.madd(client, "source", ["1", "2", "3"])
+
+    storage.copy(client, "source", "dest")
+    assert set(storage.iter(client, "dest")) == {"1", "2", "3"}
+
+
+def test_sync_set_storage_merge_unions_into_dest() -> None:
+    client = fakeredis.FakeRedis(decode_responses=True)
+    storage = RedisSetStorage()
+    storage.madd(client, "source", ["b", "c"])
+    storage.madd(client, "dest", ["a"])
+
+    storage.merge(client, "source", "dest")
+    assert set(storage.iter(client, "dest")) == {"a", "b", "c"}

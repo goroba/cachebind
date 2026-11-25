@@ -5,6 +5,8 @@ from collections.abc import AsyncIterator, Sequence
 from cachebind.backends.redis import (
     SCAN_COUNT,
     AsyncRedis,
+    async_copy_set,
+    async_merge_set,
     async_replace_key,
     async_swap_key,
     required_text,
@@ -42,14 +44,10 @@ class AsyncRedisSetStorage(AsyncSetStorage[AsyncRedis, str]):
         await async_replace_key(client, source, dest)
 
     async def copy(self, client: AsyncRedis, source: str, dest: str) -> None:
-        if source == dest:
-            raise ValueError("source and dest must differ")
-        await client.sunionstore(dest, source)
+        await async_copy_set(client, source, dest)
 
     async def merge(self, client: AsyncRedis, source: str, dest: str) -> None:
-        if source == dest:
-            raise ValueError("source and dest must differ")
-        await client.sunionstore(dest, dest, source)
+        await async_merge_set(client, source, dest)
 
     async def drop(self, client: AsyncRedis, name: str) -> None:
         await client.delete(name)
