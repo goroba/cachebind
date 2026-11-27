@@ -7,8 +7,10 @@ from cachebind.backends.redis import (
     AsyncRedis,
     async_copy_hash,
     async_merge_hash,
+    async_release_lease,
     async_replace_key,
     async_swap_key,
+    async_try_acquire_lease,
     decode,
     required_text,
     scan_done,
@@ -39,6 +41,29 @@ class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
 
     async def exists(self, client: AsyncRedis, name: str, field: str) -> bool:
         return bool(await client.hexists(name, field))
+
+    async def try_acquire_lease(
+        self,
+        client: AsyncRedis,
+        name: str,
+        field: str,
+        *,
+        token: str,
+        lease_ttl: int,
+    ) -> bool:
+        return await async_try_acquire_lease(
+            client,
+            field_present=await self.exists(client, name, field),
+            name=name,
+            field=field,
+            token=token,
+            lease_ttl=lease_ttl,
+        )
+
+    async def release_lease(
+        self, client: AsyncRedis, name: str, field: str, *, token: str
+    ) -> None:
+        await async_release_lease(client, name, field, token=token)
 
     async def mget(self, client: AsyncRedis, name: str, fields: Sequence[str]) -> list[str | None]:
         if not fields:

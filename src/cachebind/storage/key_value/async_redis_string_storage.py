@@ -2,7 +2,12 @@
 
 from collections.abc import AsyncIterator, Mapping, Sequence
 
-from cachebind.backends.redis import AsyncRedis, decode
+from cachebind.backends.redis import (
+    AsyncRedis,
+    async_release_lease,
+    async_try_acquire_lease,
+    decode,
+)
 from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
 
 
@@ -35,6 +40,29 @@ class AsyncRedisStringStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
 
     async def exists(self, client: AsyncRedis, name: str, field: str) -> bool:
         return bool(await client.exists(_redis_key(name, field)))
+
+    async def try_acquire_lease(
+        self,
+        client: AsyncRedis,
+        name: str,
+        field: str,
+        *,
+        token: str,
+        lease_ttl: int,
+    ) -> bool:
+        return await async_try_acquire_lease(
+            client,
+            field_present=await self.exists(client, name, field),
+            name=name,
+            field=field,
+            token=token,
+            lease_ttl=lease_ttl,
+        )
+
+    async def release_lease(
+        self, client: AsyncRedis, name: str, field: str, *, token: str
+    ) -> None:
+        await async_release_lease(client, name, field, token=token)
 
     async def mget(self, client: AsyncRedis, name: str, fields: Sequence[str]) -> list[str | None]:
         if not fields:

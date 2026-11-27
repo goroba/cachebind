@@ -8,10 +8,12 @@ from cachebind.backends.redis import (
     copy_hash,
     decode,
     merge_hash,
+    release_lease,
     replace_key,
     required_text,
     scan_done,
     swap_key,
+    try_acquire_lease as redis_try_acquire_lease,
 )
 from cachebind.storage.key_value.storage import KeyValueStorage
 
@@ -39,6 +41,29 @@ class RedisHashStorage(KeyValueStorage[Redis, str, str]):
 
     def exists(self, client: Redis, name: str, field: str) -> bool:
         return bool(client.hexists(name, field))
+
+    def try_acquire_lease(
+        self,
+        client: Redis,
+        name: str,
+        field: str,
+        *,
+        token: str,
+        lease_ttl: int,
+    ) -> bool:
+        return redis_try_acquire_lease(
+            client,
+            field_present=self.exists(client, name, field),
+            name=name,
+            field=field,
+            token=token,
+            lease_ttl=lease_ttl,
+        )
+
+    def release_lease(
+        self, client: Redis, name: str, field: str, *, token: str
+    ) -> None:
+        release_lease(client, name, field, token=token)
 
     def mget(self, client: Redis, name: str, fields: Sequence[str]) -> list[str | None]:
         if not fields:

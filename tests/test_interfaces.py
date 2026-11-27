@@ -8,6 +8,7 @@ from cachebind import (
     AsyncIterableStorage,
     AsyncKeyValueIndex,
     AsyncKeyValueStorage,
+    AsyncLeasableKeyValueStorage,
     AsyncOrderedSetStorage,
     AsyncCopyableStorage,
     AsyncMergeableStorage,
@@ -20,6 +21,7 @@ from cachebind import (
     IntSerializer,
     KeyValueIndex,
     KeyValueStorage,
+    LeasableKeyValueStorage,
     OrderedSetStorage,
     CopyableStorage,
     MergeableStorage,
@@ -208,6 +210,23 @@ class MemoryHash:
     def iter(self, client: object, name: str) -> Iterator[object]:
         return iter(())
 
+    def try_acquire_lease(
+        self,
+        client: object,
+        name: str,
+        field: str,
+        *,
+        token: str,
+        lease_ttl: int,
+    ) -> bool:
+        del client, name, field, token, lease_ttl
+        return True
+
+    def release_lease(
+        self, client: object, name: str, field: str, *, token: str
+    ) -> None:
+        del client, name, field, token
+
 
 class AsyncMemoryHash:
     async def get(self, client: object, name: str, field: str) -> str | None:
@@ -253,6 +272,23 @@ class AsyncMemoryHash:
     async def iter(self, client: object, name: str) -> AsyncIterator[object]:
         for _item in ():
             yield _item
+
+    async def try_acquire_lease(
+        self,
+        client: object,
+        name: str,
+        field: str,
+        *,
+        token: str,
+        lease_ttl: int,
+    ) -> bool:
+        del client, name, field, token, lease_ttl
+        return True
+
+    async def release_lease(
+        self, client: object, name: str, field: str, *, token: str
+    ) -> None:
+        del client, name, field, token
 
 
 class MemorySet:
@@ -605,17 +641,20 @@ def test_storage_protocols() -> None:
     assert isinstance(kv, CopyableStorage)
     assert isinstance(kv, DroppableStorage)
     assert isinstance(kv, IterableStorage)
+    assert isinstance(kv, LeasableKeyValueStorage)
     assert isinstance(async_kv, AsyncSnapshotableStorage)
     assert isinstance(async_kv, AsyncReplaceableStorage)
     assert isinstance(async_kv, AsyncMergeableStorage)
     assert isinstance(async_kv, AsyncCopyableStorage)
     assert isinstance(async_kv, AsyncDroppableStorage)
     assert isinstance(async_kv, AsyncIterableStorage)
+    assert isinstance(async_kv, AsyncLeasableKeyValueStorage)
 
     partial = PartialKvStorage()
     assert isinstance(partial, KeyValueStorage)
     assert not isinstance(partial, SnapshotableStorage)
     assert not isinstance(partial, IterableStorage)
+    assert not isinstance(partial, LeasableKeyValueStorage)
 
     set_storage = MemorySet()
     async_set = AsyncMemorySet()
