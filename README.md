@@ -140,4 +140,5 @@ pytest
 - [Leaderboard](https://github.com/goroba/cachebind/blob/main/docs/leaderboard.md) — ordered set of user ids, with users loaded from Postgres
 - [Tag-Based Caching](https://github.com/goroba/cachebind/blob/main/docs/tag-based-caching.md) — bind key-value user cache and leaderboard entry under `user:{id}`, evict together on delete
 - [Trie (Prefix Tree)](https://github.com/goroba/cachebind/blob/main/docs/trie.md) — city names in a Redis Search trie, with cities loaded from Postgres on search
-- [Write-Back Caching example](https://github.com/goroba/cachebind/blob/main/docs/write-back-caching.md) — collect last-visit times, then save them to the database
+- [Write-Back Caching Example](https://github.com/goroba/cachebind/blob/main/docs/write-back-caching.md) — collect last-visit times, then save them to the database
+- [Cache Stampede/Thundering Herd: Coordinated Fill With Lease Get](https://github.com/goroba/cachebind/blob/main/docs/lease_get.md) — one origin load per cache miss under load

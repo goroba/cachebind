@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `lease_get` on key-value indexes: read cache or run a callback under a fill lease on miss, then `set`.
+- `LeasableKeyValueStorage` / `AsyncLeasableKeyValueStorage` and `LeasableKeyValueIndex` / `AsyncLeasableKeyValueIndex` protocols.
+- Redis hash and string storages support fill-lease acquire and release.
+- `docs/lease_get.md` on cache stampede, thundering herd, and using `lease_get`.
+
+### Changed
+
+- `README.md` no longer documents `lease_get`; see `docs/lease_get.md`.
+
 ## [1.2.1] - 2026-11-25
 
 ### Added

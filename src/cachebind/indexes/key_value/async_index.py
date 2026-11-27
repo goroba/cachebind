@@ -1,9 +1,10 @@
 """Asynchronous key-value index."""
 
-from collections.abc import AsyncIterable, AsyncIterator, Hashable, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Hashable, Iterator, Mapping, Sequence
 from contextlib import asynccontextmanager
 from typing import Self
 
+from cachebind.indexes._lease import async_lease_get_body
 from cachebind.indexes._merge import async_merge_context
 from cachebind.indexes._update import async_update_context
 from cachebind.indexes._replace import async_replace_context, async_snapshot_context
@@ -37,6 +38,27 @@ class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         if raw is None:
             return None
         return serializer.deserialize(raw)
+
+    async def lease_get(
+        self,
+        client: ClientType,
+        id: IdType,
+        callback: Callable[[], Awaitable[ModelType]],
+        *,
+        lease_ttl: int,
+        ttl: int | None = None,
+        **kwargs,
+    ) -> ModelType | None:
+        """Return the cached model, or run ``callback`` under a fill lease when the id is missing."""
+        return await async_lease_get_body(
+            self,
+            client,
+            id,
+            callback,
+            lease_ttl=lease_ttl,
+            ttl=ttl,
+            kwargs=kwargs,
+        )
 
     async def set(
         self,

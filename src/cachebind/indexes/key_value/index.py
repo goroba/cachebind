@@ -1,9 +1,10 @@
 """Synchronous key-value index."""
 
-from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Self
 
+from cachebind.indexes._lease import lease_get_body
 from cachebind.indexes._merge import merge_context
 from cachebind.indexes._update import update_context
 from cachebind.indexes._replace import replace_context, snapshot_context
@@ -37,6 +38,27 @@ class KeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
         if raw is None:
             return None
         return serializer.deserialize(raw)
+
+    def lease_get(
+        self,
+        client: ClientType,
+        id: IdType,
+        callback: Callable[[], ModelType],
+        *,
+        lease_ttl: int,
+        ttl: int | None = None,
+        **kwargs,
+    ) -> ModelType | None:
+        """Return the cached model, or run ``callback`` under a fill lease when the id is missing."""
+        return lease_get_body(
+            self,
+            client,
+            id,
+            callback,
+            lease_ttl=lease_ttl,
+            ttl=ttl,
+            kwargs=kwargs,
+        )
 
     def set(
         self,
