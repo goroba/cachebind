@@ -44,11 +44,29 @@ class SpyOrderedSet(OrderedSetStorage[Spy, str]):
     def __init__(self) -> None:
         self.called = False
 
+    def add(self, client: Spy, name: str, member: str, score: float) -> None:
+        return None
+
     def madd(self, client: Spy, name: str, members: Sequence[tuple[str, float]]) -> None:
         self.called = True
 
+    def remove(self, client: Spy, name: str, member: str) -> None:
+        return None
+
     def mremove(self, client: Spy, name: str, members: Sequence[str]) -> None:
         self.called = True
+
+    def contains(self, client: Spy, name: str, member: str) -> bool:
+        return False
+
+    def score(self, client: Spy, name: str, member: str) -> float | None:
+        return None
+
+    def rank(self, client: Spy, name: str, member: str) -> int | None:
+        return None
+
+    def rev_rank(self, client: Spy, name: str, member: str) -> int | None:
+        return None
 
     def range(self, client: Spy, name: str, start: int, stop: int) -> list[str]:
         self.called = True
@@ -79,13 +97,31 @@ class AsyncSpyOrderedSet(AsyncOrderedSetStorage[AsyncSpy, str]):
     def __init__(self) -> None:
         self.called = False
 
+    async def add(self, client: AsyncSpy, name: str, member: str, score: float) -> None:
+        return None
+
     async def madd(
         self, client: AsyncSpy, name: str, members: Sequence[tuple[str, float]]
     ) -> None:
         self.called = True
 
+    async def remove(self, client: AsyncSpy, name: str, member: str) -> None:
+        return None
+
     async def mremove(self, client: AsyncSpy, name: str, members: Sequence[str]) -> None:
         self.called = True
+
+    async def contains(self, client: AsyncSpy, name: str, member: str) -> bool:
+        return False
+
+    async def score(self, client: AsyncSpy, name: str, member: str) -> float | None:
+        return None
+
+    async def rank(self, client: AsyncSpy, name: str, member: str) -> int | None:
+        return None
+
+    async def rev_rank(self, client: AsyncSpy, name: str, member: str) -> int | None:
+        return None
 
     async def range(self, client: AsyncSpy, name: str, start: int, stop: int) -> list[str]:
         self.called = True

@@ -1,12 +1,12 @@
 """Fill-lease operations for key-value storage."""
 
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class LeasableKeyValueStorage[ClientType](Protocol):
+from abc import ABC, abstractmethod
+class LeasableKeyValueStorage[ClientType](ABC):
     """Synchronous key-value storage that can acquire and release a per-field fill lease."""
 
+    @abstractmethod
     def try_acquire_lease(
         self,
         client: ClientType,
@@ -22,6 +22,7 @@ class LeasableKeyValueStorage[ClientType](Protocol):
         """
         ...
 
+    @abstractmethod
     def release_lease(
         self,
         client: ClientType,
@@ -34,10 +35,10 @@ class LeasableKeyValueStorage[ClientType](Protocol):
         ...
 
 
-@runtime_checkable
-class AsyncLeasableKeyValueStorage[ClientType](Protocol):
+class AsyncLeasableKeyValueStorage[ClientType](ABC):
     """Asynchronous key-value storage that can acquire and release a per-field fill lease."""
 
+    @abstractmethod
     async def try_acquire_lease(
         self,
         client: ClientType,
@@ -53,6 +54,7 @@ class AsyncLeasableKeyValueStorage[ClientType](Protocol):
         """
         ...
 
+    @abstractmethod
     async def release_lease(
         self,
         client: ClientType,

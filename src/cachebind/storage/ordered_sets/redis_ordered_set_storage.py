@@ -16,10 +16,24 @@ from cachebind.backends.redis import (
     swap_key,
     zset_windows,
 )
+from cachebind.storage.copyable import CopyableStorage
+from cachebind.storage.droppable import DroppableStorage
+from cachebind.storage.iterable import IterableStorage
+from cachebind.storage.mergeable import MergeableStorage
 from cachebind.storage.ordered_sets.storage import OrderedSetStorage
+from cachebind.storage.replaceable import ReplaceableStorage
+from cachebind.storage.snapshotable import SnapshotableStorage
 
 
-class RedisOrderedSetStorage(OrderedSetStorage[Redis, str]):
+class RedisOrderedSetStorage(
+    OrderedSetStorage[Redis, str],
+    SnapshotableStorage[Redis],
+    ReplaceableStorage[Redis],
+    MergeableStorage[Redis],
+    CopyableStorage[Redis],
+    DroppableStorage[Redis],
+    IterableStorage[Redis, tuple[str, float]],
+):
     """Synchronous Redis ordered sets. ``name`` is the Redis key."""
 
     def add(self, client: Redis, name: str, member: str, score: float) -> None:

@@ -9,7 +9,14 @@ from cachebind.indexes._update import update_context
 from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
+from cachebind.indexes.droppable import DroppableIndex
+from cachebind.indexes.evictable import EvictableIndex
+from cachebind.indexes.iterable import IterableIndex
+from cachebind.indexes.mergeable import MergeableIndex
 from cachebind.indexes.ordered_sets.base import OrderedSetBase, _empty_range
+from cachebind.indexes.replaceable import ReplaceableIndex
+from cachebind.indexes.snapshotable import SnapshotableIndex
+from cachebind.indexes.updatable import UpdatableIndex
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.ordered_sets.storage import OrderedSetStorage
 
@@ -17,7 +24,14 @@ BATCH = 100
 
 
 class OrderedSetIndex[ClientType, MemberType, StorageType: Hashable](
-    OrderedSetBase[ClientType, MemberType, StorageType]
+    OrderedSetBase[ClientType, MemberType, StorageType],
+    SnapshotableIndex[ClientType],
+    DroppableIndex[ClientType],
+    ReplaceableIndex[ClientType],
+    MergeableIndex[ClientType],
+    UpdatableIndex[ClientType],
+    EvictableIndex[ClientType],
+    IterableIndex[ClientType, tuple[MemberType, float]],
 ):
     """Sync ordered-set index: member binding, storage key, and the storage that persists it.
 

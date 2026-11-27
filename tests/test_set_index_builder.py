@@ -40,11 +40,20 @@ class SpySet(SetStorage[Spy, str]):
     def __init__(self) -> None:
         self.called = False
 
+    def add(self, client: Spy, name: str, member: str) -> None:
+        return None
+
     def madd(self, client: Spy, name: str, members: Sequence[str]) -> None:
         self.called = True
 
+    def remove(self, client: Spy, name: str, member: str) -> None:
+        return None
+
     def mremove(self, client: Spy, name: str, members: Sequence[str]) -> None:
         self.called = True
+
+    def contains(self, client: Spy, name: str, member: str) -> bool:
+        return False
 
 
 class AsyncSpy:
@@ -55,11 +64,20 @@ class AsyncSpySet(AsyncSetStorage[AsyncSpy, str]):
     def __init__(self) -> None:
         self.called = False
 
+    async def add(self, client: AsyncSpy, name: str, member: str) -> None:
+        return None
+
     async def madd(self, client: AsyncSpy, name: str, members: Sequence[str]) -> None:
         self.called = True
 
+    async def remove(self, client: AsyncSpy, name: str, member: str) -> None:
+        return None
+
     async def mremove(self, client: AsyncSpy, name: str, members: Sequence[str]) -> None:
         self.called = True
+
+    async def contains(self, client: AsyncSpy, name: str, member: str) -> bool:
+        return False
 
 
 class BytesSet(SetStorage[Spy, bytes]):

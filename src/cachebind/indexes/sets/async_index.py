@@ -9,7 +9,14 @@ from cachebind.indexes._update import async_update_context
 from cachebind.indexes._replace import async_replace_context, async_snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
+from cachebind.indexes.droppable import AsyncDroppableIndex
+from cachebind.indexes.evictable import AsyncEvictableIndex
+from cachebind.indexes.iterable import AsyncIterableIndex
+from cachebind.indexes.mergeable import AsyncMergeableIndex
+from cachebind.indexes.replaceable import AsyncReplaceableIndex
 from cachebind.indexes.sets.base import SetBase
+from cachebind.indexes.snapshotable import AsyncSnapshotableIndex
+from cachebind.indexes.updatable import AsyncUpdatableIndex
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.sets.async_storage import AsyncSetStorage
 
@@ -17,7 +24,14 @@ BATCH = 100
 
 
 class AsyncSetIndex[ClientType, MemberType, StorageType: Hashable](
-    SetBase[ClientType, MemberType, StorageType]
+    SetBase[ClientType, MemberType, StorageType],
+    AsyncSnapshotableIndex[ClientType],
+    AsyncDroppableIndex[ClientType],
+    AsyncReplaceableIndex[ClientType],
+    AsyncMergeableIndex[ClientType],
+    AsyncUpdatableIndex[ClientType],
+    AsyncEvictableIndex[ClientType],
+    AsyncIterableIndex[ClientType, MemberType],
 ):
     """Async set index: member binding, storage key, and the storage that persists it.
 

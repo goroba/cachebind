@@ -1,6 +1,6 @@
 """No-op breadcrumbs."""
 
-from cachebind.tagging.breadcrumbs.protocol import Breadcrumbs
+from cachebind.tagging.breadcrumbs.breadcrumbs import Breadcrumbs
 
 
 class NoopBreadcrumbs(Breadcrumbs):

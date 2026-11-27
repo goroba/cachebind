@@ -14,10 +14,14 @@ from cachebind import (
 )
 from cachebind.backends.redis.lease import lease_key
 from cachebind.storage import AsyncRedisHashStorage, RedisHashStorage
+from cachebind.storage.key_value.storage import KeyValueStorage
 from cachebind.storage.leaseable import AsyncLeasableKeyValueStorage, LeasableKeyValueStorage
 
 
-class LeasableMemoryStorage:
+class LeasableMemoryStorage(
+    KeyValueStorage[object, str, str],
+    LeasableKeyValueStorage[object],
+):
     def __init__(self) -> None:
         self.data: dict[tuple[str, str], str] = {}
         self.leases: dict[tuple[str, str], str] = {}

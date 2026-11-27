@@ -4,12 +4,13 @@ from cachebind.indexes._builder import storage_client_type
 from cachebind.indexes.base import get_registry
 from cachebind.indexes.evictable import AsyncEvictableIndex
 from cachebind.storage.sets.async_storage import AsyncSetStorage
+from cachebind.tagging.breadcrumbs.breadcrumbs import Breadcrumbs
 from cachebind.tagging.breadcrumbs.colon_breadcrumbs import ColonBreadcrumbs
-from cachebind.tagging.breadcrumbs.protocol import Breadcrumbs
 from cachebind.tagging.tag_keeper._keys import DEFAULT_TAG_KEEPER_NAME, tag_set_key
+from cachebind.tagging.tag_keeper.tag_keeper import AsyncTagKeeper
 
 
-class AsyncSetTagKeeper[ClientType]:
+class AsyncSetTagKeeper[ClientType](AsyncTagKeeper[ClientType]):
     """Collect breadcrumbs in sets ``tag_keeper:{name}:{tag}``; flush via registry eviction."""
 
     def __init__(

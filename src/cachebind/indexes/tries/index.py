@@ -8,13 +8,25 @@ from cachebind.indexes._merge import merge_context
 from cachebind.indexes._update import update_context
 from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
+from cachebind.indexes.droppable import DroppableIndex
+from cachebind.indexes.evictable import EvictableIndex
+from cachebind.indexes.mergeable import MergeableIndex
+from cachebind.indexes.replaceable import ReplaceableIndex
+from cachebind.indexes.snapshotable import SnapshotableIndex
 from cachebind.indexes.tries.base import TrieBase
+from cachebind.indexes.updatable import UpdatableIndex
 from cachebind.backends.redis import check_limit
 from cachebind.storage.tries.storage import TrieStorage
 
 
 class TrieIndex[ClientType, MemberType, StorageType: Hashable](
-    TrieBase[ClientType, MemberType, StorageType]
+    TrieBase[ClientType, MemberType, StorageType],
+    SnapshotableIndex[ClientType],
+    DroppableIndex[ClientType],
+    ReplaceableIndex[ClientType],
+    MergeableIndex[ClientType],
+    UpdatableIndex[ClientType],
+    EvictableIndex[ClientType],
 ):
     """Sync trie index: member binding, storage key, and the storage that persists it.
 

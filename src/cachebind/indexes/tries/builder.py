@@ -7,9 +7,9 @@ from cachebind.indexes._builder import (
     check_key,
     check_storage_type,
     check_value_type,
+    generic_args,
     index_class,
     instance_class,
-    protocol_args,
     serializer_class,
     serializer_types,
     storage_client_type,
@@ -47,7 +47,7 @@ def build_trie_index[
             serializer=serializer,
             storage=storage,
             base=TrieIndex,
-            protocol=TrieStorage,
+            interface=TrieStorage,
             other=AsyncTrieStorage,
         ),
     )
@@ -78,7 +78,7 @@ def build_async_trie_index[
             serializer=serializer,
             storage=storage,
             base=AsyncTrieIndex,
-            protocol=AsyncTrieStorage,
+            interface=AsyncTrieStorage,
             other=TrieStorage,
         ),
     )
@@ -91,7 +91,7 @@ def _build(
     serializer: Any,
     storage: Any,
     base: type[TrieIndex[Any, Any, Any]] | type[AsyncTrieIndex[Any, Any, Any]],
-    protocol: type[TrieStorage[Any, Any]] | type[AsyncTrieStorage[Any, Any]],
+    interface: type[TrieStorage[Any, Any]] | type[AsyncTrieStorage[Any, Any]],
     other: type[TrieStorage[Any, Any]] | type[AsyncTrieStorage[Any, Any]],
 ) -> Any:
     check_key(key)
@@ -99,9 +99,9 @@ def _build(
     value_type, serializer_storage = serializer_types(key, serializer_class(serializer))
     check_value_type(key, member_type, value_type, label="member type")
     storage_cls = instance_class(key, storage, label="storage")
-    storage_type = _storage_type(key, storage_cls, protocol, other)
+    storage_type = _storage_type(key, storage_cls, interface, other)
     check_storage_type(key, serializer_storage, storage_type, storage_cls)
-    client_type = storage_client_type(key, storage_cls, protocol)
+    client_type = storage_client_type(key, storage_cls, interface)
     return index_class(
         key,
         serializer_instance=serializer,
@@ -119,13 +119,13 @@ def _build(
 def _storage_type(
     key: str,
     storage: type,
-    protocol: type,
+    interface: type,
     other: type,
 ) -> Any:
-    args = protocol_args(storage, protocol)
+    args = generic_args(storage, interface)
     if args is None or len(args) != 2:
-        if protocol_args(storage, other) is not None:
-            if protocol is TrieStorage:
+        if generic_args(storage, other) is not None:
+            if interface is TrieStorage:
                 raise TypeError(
                     f"index {key!r}: {storage.__name__} is asynchronous; "
                     "build_trie_index requires TrieStorage"
@@ -136,6 +136,6 @@ def _storage_type(
             )
         raise TypeError(
             f"index {key!r}: {storage.__name__} does not declare "
-            f"{protocol.__name__}[ClientType, PayloadType]"
+            f"{interface.__name__}[ClientType, PayloadType]"
         )
     return args[1]

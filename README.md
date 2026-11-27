@@ -2,7 +2,7 @@
 
 A Python library that names a cache binding — one storage key, a serializer, and a storage — and reads or writes Python values through it.
 
-**What is it for?** Cachebind is a way to name a cache binding and use it from application code. An index holds one storage key, a serializer, and a storage. You build it once. Each call takes your storage client and reads or writes a Python value through that binding. Redis storages are included. Any storage that matches the protocol works the same way.
+**What is it for?** Cachebind is a way to name a cache binding and use it from application code. An index holds one storage key, a serializer, and a storage. You build it once. Each call takes your storage client and reads or writes a Python value through that binding. Redis storages are included. A custom storage works the same way when it subclasses the storage interface.
 
 **What can an index store?** A key-value index stores one model per id. A set index stores members in one set. An ordered set index stores members with scores, lowest score first. A trie index stores suggestion strings with scores and keeps each member as the payload. `search` returns those members in rank order. Each has a sync builder and an async builder.
 

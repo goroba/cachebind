@@ -1,22 +1,22 @@
 """Iterate entries stored under one key."""
 
+from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class IterableStorage[ClientType, ItemType](Protocol):
+class IterableStorage[ClientType, ItemType](ABC):
     """Synchronous storage that scans every entry under ``name``."""
 
+    @abstractmethod
     def iter(self, client: ClientType, name: str) -> Iterator[ItemType]:
         """Yield each entry stored under ``name``."""
         ...
 
 
-@runtime_checkable
-class AsyncIterableStorage[ClientType, ItemType](Protocol):
+class AsyncIterableStorage[ClientType, ItemType](ABC):
     """Asynchronous storage that scans every entry under ``name``."""
 
+    @abstractmethod
     def iter(self, client: ClientType, name: str) -> AsyncIterator[ItemType]:
         """Yield each entry stored under ``name``."""
         ...

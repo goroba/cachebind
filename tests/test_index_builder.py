@@ -885,6 +885,31 @@ class _BatchSerializer(Serializer[int, str]):
 
 
 class _ScanStorage(KeyValueStorage[Memory, str, str]):
+    def get(self, client: Memory, name: str, field: str) -> str | None:
+        return None
+
+    def set(
+        self, client: Memory, name: str, field: str, value: str, *, ttl: int | None = None
+    ) -> None:
+        return None
+
+    def delete(self, client: Memory, name: str, field: str) -> None:
+        return None
+
+    def mdelete(self, client: Memory, name: str, fields: Sequence[str]) -> None:
+        return None
+
+    def exists(self, client: Memory, name: str, field: str) -> bool:
+        return False
+
+    def mget(self, client: Memory, name: str, fields: Sequence[str]) -> list[str | None]:
+        return [None for _ in fields]
+
+    def mset(
+        self, client: Memory, name: str, items: Mapping[str, str], *, ttl: int | None = None
+    ) -> None:
+        return None
+
     def iter(self, client: Memory, name: str) -> Iterator[tuple[str, str]]:
         for number in range(250):
             yield str(number), str(number)

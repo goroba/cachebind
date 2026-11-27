@@ -1,7 +1,8 @@
 """Shared checks for building a registered index."""
 
 import types
-from typing import Any, Generic, Protocol, TypeVar, get_args, get_origin
+from abc import ABC
+from typing import Any, Generic, TypeVar, get_args, get_origin
 
 from cachebind.indexes.base import get_registry
 from cachebind.serializers.serializer import Serializer
@@ -35,7 +36,7 @@ def serializer_types(key: str, serializer: Any) -> tuple[Any, Any]:
         raise TypeError(
             f"index {key!r}: serializer must be a class, got {type(serializer).__name__}"
         )
-    args = protocol_args(serializer, Serializer)
+    args = generic_args(serializer, Serializer)
     if args is None or len(args) != 2:
         raise TypeError(
             f"index {key!r}: {serializer.__name__} does not declare "
@@ -53,8 +54,8 @@ def check_value_type(key: str, declared: Any, value_type: Any, *, label: str) ->
     )
 
 
-def storage_client_type(key: str, storage: Any, protocol: type) -> type:
-    args = protocol_args(storage, protocol)
+def storage_client_type(key: str, storage: Any, interface: type) -> type:
+    args = generic_args(storage, interface)
     if args and isinstance(args[0], type):
         return args[0]
     name = storage.__name__ if isinstance(storage, type) else type(storage).__name__
@@ -84,8 +85,8 @@ def value_matches(value_type: Any, declared: Any) -> bool:
     return _is_subclass(declared, bound)
 
 
-def protocol_args(cls: Any, protocol: type) -> tuple[Any, ...] | None:
-    return _walk_protocol_args(cls, protocol, {}, ())
+def generic_args(cls: Any, interface: type) -> tuple[Any, ...] | None:
+    return _walk_generic_args(cls, interface, {}, ())
 
 
 def index_class(
@@ -122,23 +123,23 @@ def _is_subclass(declared: Any, parent: Any) -> bool:
         return False
 
 
-def _walk_protocol_args(
+def _walk_generic_args(
     cls: Any,
-    protocol: type,
+    interface: type,
     subst: dict[Any, Any],
     stack: tuple[type, ...],
 ) -> tuple[Any, ...] | None:
-    if not isinstance(cls, type) or cls in stack or cls in {object, Protocol, Generic}:
+    if not isinstance(cls, type) or cls in stack or cls in {object, ABC, Generic}:
         return None
     stack = (*stack, cls)
     for base in types.get_original_bases(cls):
         origin = get_origin(base)
         if origin is None:
-            found = _walk_protocol_args(base, protocol, subst, stack)
+            found = _walk_generic_args(base, interface, subst, stack)
             if found is not None:
                 return found
             continue
-        if origin is protocol:
+        if origin is interface:
             return tuple(_substitute(arg, subst) for arg in get_args(base))
         if not isinstance(origin, type):
             continue
@@ -148,7 +149,7 @@ def _walk_protocol_args(
         if len(params) == len(args):
             for param, arg in zip(params, args, strict=True):
                 local[param] = _substitute(arg, subst)
-        found = _walk_protocol_args(origin, protocol, local, stack)
+        found = _walk_generic_args(origin, interface, local, stack)
         if found is not None:
             return found
     return None

@@ -8,14 +8,30 @@ from cachebind.backends.redis import (
     async_try_acquire_lease,
     decode,
 )
+from cachebind.storage.copyable import AsyncCopyableStorage
+from cachebind.storage.droppable import AsyncDroppableStorage
+from cachebind.storage.iterable import AsyncIterableStorage
 from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
+from cachebind.storage.leaseable import AsyncLeasableKeyValueStorage
+from cachebind.storage.mergeable import AsyncMergeableStorage
+from cachebind.storage.replaceable import AsyncReplaceableStorage
+from cachebind.storage.snapshotable import AsyncSnapshotableStorage
 
 
 def _redis_key(name: str, field: str) -> str:
     return f"{name}:{field}"
 
 
-class AsyncRedisStringStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
+class AsyncRedisStringStorage(
+    AsyncKeyValueStorage[AsyncRedis, str, str],
+    AsyncSnapshotableStorage[AsyncRedis],
+    AsyncReplaceableStorage[AsyncRedis],
+    AsyncMergeableStorage[AsyncRedis],
+    AsyncCopyableStorage[AsyncRedis],
+    AsyncDroppableStorage[AsyncRedis],
+    AsyncIterableStorage[AsyncRedis, tuple[str, str]],
+    AsyncLeasableKeyValueStorage[AsyncRedis],
+):
     """Asynchronous Redis strings. The Redis key is ``name:field``."""
 
     async def get(self, client: AsyncRedis, name: str, field: str) -> str | None:

@@ -16,10 +16,24 @@ from cachebind.backends.redis import (
     rank_value,
     score_value,
 )
+from cachebind.storage.copyable import AsyncCopyableStorage
+from cachebind.storage.droppable import AsyncDroppableStorage
+from cachebind.storage.iterable import AsyncIterableStorage
+from cachebind.storage.mergeable import AsyncMergeableStorage
 from cachebind.storage.ordered_sets.async_storage import AsyncOrderedSetStorage
+from cachebind.storage.replaceable import AsyncReplaceableStorage
+from cachebind.storage.snapshotable import AsyncSnapshotableStorage
 
 
-class AsyncRedisOrderedSetStorage(AsyncOrderedSetStorage[AsyncRedis, str]):
+class AsyncRedisOrderedSetStorage(
+    AsyncOrderedSetStorage[AsyncRedis, str],
+    AsyncSnapshotableStorage[AsyncRedis],
+    AsyncReplaceableStorage[AsyncRedis],
+    AsyncMergeableStorage[AsyncRedis],
+    AsyncCopyableStorage[AsyncRedis],
+    AsyncDroppableStorage[AsyncRedis],
+    AsyncIterableStorage[AsyncRedis, tuple[str, float]],
+):
     """Asynchronous Redis ordered sets. ``name`` is the Redis key."""
 
     async def add(self, client: AsyncRedis, name: str, member: str, score: float) -> None:

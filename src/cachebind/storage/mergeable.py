@@ -1,21 +1,21 @@
 """Combine a staging key into a live storage name."""
 
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class MergeableStorage[ClientType](Protocol):
+from abc import ABC, abstractmethod
+class MergeableStorage[ClientType](ABC):
     """Synchronous storage that can merge ``source`` into ``dest``."""
 
+    @abstractmethod
     def merge(self, client: ClientType, source: str, dest: str) -> None:
         """Apply every entry in ``source`` onto ``dest``. Staging values win field conflicts."""
         ...
 
 
-@runtime_checkable
-class AsyncMergeableStorage[ClientType](Protocol):
+class AsyncMergeableStorage[ClientType](ABC):
     """Asynchronous storage that can merge ``source`` into ``dest``."""
 
+    @abstractmethod
     async def merge(self, client: ClientType, source: str, dest: str) -> None:
         """Apply every entry in ``source`` onto ``dest``. Staging values win field conflicts."""
         ...

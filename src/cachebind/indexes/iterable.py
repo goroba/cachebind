@@ -1,22 +1,22 @@
 """Index iteration over stored entries."""
 
+from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class IterableIndex[ClientType, ItemType](Protocol):
+class IterableIndex[ClientType, ItemType](ABC):
     """Synchronous index that yields stored entries under its key."""
 
+    @abstractmethod
     def iter(self, client: ClientType, **kwargs) -> Iterator[ItemType]:
         """Yield each entry stored under this index key."""
         ...
 
 
-@runtime_checkable
-class AsyncIterableIndex[ClientType, ItemType](Protocol):
+class AsyncIterableIndex[ClientType, ItemType](ABC):
     """Asynchronous index that yields stored entries under its key."""
 
+    @abstractmethod
     async def iter(self, client: ClientType, **kwargs) -> AsyncIterator[ItemType]:
         """Yield each entry stored under this index key."""
         ...

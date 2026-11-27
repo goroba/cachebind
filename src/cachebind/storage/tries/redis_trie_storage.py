@@ -12,10 +12,22 @@ from cachebind.backends.redis import (
     sugget_command,
     swap_key,
 )
+from cachebind.storage.copyable import CopyableStorage
+from cachebind.storage.droppable import DroppableStorage
+from cachebind.storage.mergeable import MergeableStorage
+from cachebind.storage.replaceable import ReplaceableStorage
+from cachebind.storage.snapshotable import SnapshotableStorage
 from cachebind.storage.tries.storage import TrieStorage
 
 
-class RedisTrieStorage(TrieStorage[Redis, str]):
+class RedisTrieStorage(
+    TrieStorage[Redis, str],
+    SnapshotableStorage[Redis],
+    ReplaceableStorage[Redis],
+    MergeableStorage[Redis],
+    CopyableStorage[Redis],
+    DroppableStorage[Redis],
+):
     """Synchronous Redis Search trie. ``name`` is the suggestion-dictionary key.
 
     Rank uses the stored score. A shorter remainder after the prefix ranks higher

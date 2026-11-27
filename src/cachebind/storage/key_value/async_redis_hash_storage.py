@@ -15,10 +15,26 @@ from cachebind.backends.redis import (
     required_text,
     scan_done,
 )
+from cachebind.storage.copyable import AsyncCopyableStorage
+from cachebind.storage.droppable import AsyncDroppableStorage
+from cachebind.storage.iterable import AsyncIterableStorage
 from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
+from cachebind.storage.leaseable import AsyncLeasableKeyValueStorage
+from cachebind.storage.mergeable import AsyncMergeableStorage
+from cachebind.storage.replaceable import AsyncReplaceableStorage
+from cachebind.storage.snapshotable import AsyncSnapshotableStorage
 
 
-class AsyncRedisHashStorage(AsyncKeyValueStorage[AsyncRedis, str, str]):
+class AsyncRedisHashStorage(
+    AsyncKeyValueStorage[AsyncRedis, str, str],
+    AsyncSnapshotableStorage[AsyncRedis],
+    AsyncReplaceableStorage[AsyncRedis],
+    AsyncMergeableStorage[AsyncRedis],
+    AsyncCopyableStorage[AsyncRedis],
+    AsyncDroppableStorage[AsyncRedis],
+    AsyncIterableStorage[AsyncRedis, tuple[str, str]],
+    AsyncLeasableKeyValueStorage[AsyncRedis],
+):
     """Asynchronous Redis hashes. One instance can serve any hash name."""
 
     async def get(self, client: AsyncRedis, name: str, field: str) -> str | None:

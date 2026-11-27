@@ -3,14 +3,30 @@
 from collections.abc import Iterator, Mapping, Sequence
 
 from cachebind.backends.redis import Redis, decode, release_lease, try_acquire_lease as redis_try_acquire_lease
+from cachebind.storage.copyable import CopyableStorage
+from cachebind.storage.droppable import DroppableStorage
+from cachebind.storage.iterable import IterableStorage
 from cachebind.storage.key_value.storage import KeyValueStorage
+from cachebind.storage.leaseable import LeasableKeyValueStorage
+from cachebind.storage.mergeable import MergeableStorage
+from cachebind.storage.replaceable import ReplaceableStorage
+from cachebind.storage.snapshotable import SnapshotableStorage
 
 
 def _redis_key(name: str, field: str) -> str:
     return f"{name}:{field}"
 
 
-class RedisStringStorage(KeyValueStorage[Redis, str, str]):
+class RedisStringStorage(
+    KeyValueStorage[Redis, str, str],
+    SnapshotableStorage[Redis],
+    ReplaceableStorage[Redis],
+    MergeableStorage[Redis],
+    CopyableStorage[Redis],
+    DroppableStorage[Redis],
+    IterableStorage[Redis, tuple[str, str]],
+    LeasableKeyValueStorage[Redis],
+):
     """Synchronous Redis strings. The Redis key is ``name:field``."""
 
     def get(self, client: Redis, name: str, field: str) -> str | None:

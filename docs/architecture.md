@@ -8,7 +8,7 @@ Cachebind is organized in layers. Dependencies point downward only.
 |-------|---------|------|
 | L0 | `cachebind` | Public exports |
 | L1 | `indexes`, `serializers`, `tagging` | Domain APIs (no Redis driver) |
-| L2 | `storage` | Storage protocols and backend adapters (`RedisHashStorage`, …) |
+| L2 | `storage` | Storage interfaces and backend adapters (`RedisHashStorage`, …) |
 | L3 | `backends.redis` | Redis client, wire decode, key ops, copy/merge for all types |
 | L4 | `redis` (PyPI) | Driver |
 
@@ -28,4 +28,4 @@ Storage adapters import from `backends.redis` only. There are no private `_*` he
 
 ## Adding another backend
 
-Introduce `cachebind.backends.<name>/` with the same responsibilities as `backends.redis`, and wire new storage adapter classes under `storage/` that call into it. Keep `indexes` and protocols free of backend imports.
+Introduce `cachebind.backends.<name>/` with the same responsibilities as `backends.redis`, and wire new storage adapter classes under `storage/` that call into it. Keep `indexes` and storage interfaces free of backend imports.

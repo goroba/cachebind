@@ -9,7 +9,14 @@ from cachebind.indexes._update import update_context
 from cachebind.indexes._replace import replace_context, snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
 from cachebind.indexes._breadcrumb import storage_identifier
+from cachebind.indexes.droppable import DroppableIndex
+from cachebind.indexes.evictable import EvictableIndex
+from cachebind.indexes.iterable import IterableIndex
+from cachebind.indexes.mergeable import MergeableIndex
+from cachebind.indexes.replaceable import ReplaceableIndex
 from cachebind.indexes.sets.base import SetBase
+from cachebind.indexes.snapshotable import SnapshotableIndex
+from cachebind.indexes.updatable import UpdatableIndex
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.sets.storage import SetStorage
 
@@ -17,7 +24,14 @@ BATCH = 100
 
 
 class SetIndex[ClientType, MemberType, StorageType: Hashable](
-    SetBase[ClientType, MemberType, StorageType]
+    SetBase[ClientType, MemberType, StorageType],
+    SnapshotableIndex[ClientType],
+    DroppableIndex[ClientType],
+    ReplaceableIndex[ClientType],
+    MergeableIndex[ClientType],
+    UpdatableIndex[ClientType],
+    EvictableIndex[ClientType],
+    IterableIndex[ClientType, MemberType],
 ):
     """Sync set index: member binding, storage key, and the storage that persists it.
 

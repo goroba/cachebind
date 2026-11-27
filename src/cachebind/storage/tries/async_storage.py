@@ -1,11 +1,10 @@
 """Asynchronous trie storage."""
 
+from abc import ABC, abstractmethod
 from collections.abc import Hashable, Sequence
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class AsyncTrieStorage[ClientType, PayloadType: Hashable](Protocol):
+class AsyncTrieStorage[ClientType, PayloadType: Hashable](ABC):
     """Asynchronous trie storage.
 
     ``client`` is the storage client for that call.
@@ -17,6 +16,7 @@ class AsyncTrieStorage[ClientType, PayloadType: Hashable](Protocol):
     ``fuzzy`` requests matches within one edit of ``prefix``.
     """
 
+    @abstractmethod
     async def add(
         self,
         client: ClientType,
@@ -34,6 +34,7 @@ class AsyncTrieStorage[ClientType, PayloadType: Hashable](Protocol):
         """
         ...
 
+    @abstractmethod
     async def madd(
         self,
         client: ClientType,
@@ -45,14 +46,17 @@ class AsyncTrieStorage[ClientType, PayloadType: Hashable](Protocol):
         """Add every suggestion. A repeated string keeps the last score and payload."""
         ...
 
+    @abstractmethod
     async def remove(self, client: ClientType, name: str, string: str) -> None:
         """Remove ``string``. A missing string is not an error."""
         ...
 
+    @abstractmethod
     async def mremove(self, client: ClientType, name: str, strings: Sequence[str]) -> None:
         """Remove every string. Missing strings are not an error."""
         ...
 
+    @abstractmethod
     async def search(
         self,
         client: ClientType,
@@ -65,6 +69,7 @@ class AsyncTrieStorage[ClientType, PayloadType: Hashable](Protocol):
         """Return payloads for suggestions that match ``prefix``, in rank order."""
         ...
 
+    @abstractmethod
     async def length(self, client: ClientType, name: str) -> int:
         """Return the number of suggestion strings in the trie."""
         ...

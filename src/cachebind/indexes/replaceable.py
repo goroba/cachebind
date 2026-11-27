@@ -1,22 +1,23 @@
 """Publish a detached staging index onto a registered live name."""
 
+from abc import ABC, abstractmethod
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
-from typing import Protocol, Self, runtime_checkable
+from typing import Self
 
 
-@runtime_checkable
-class ReplaceableIndex[ClientType](Protocol):
+class ReplaceableIndex[ClientType](ABC):
     """Synchronous index that can overwrite its live key from a staging build."""
 
+    @abstractmethod
     def replace(self, client: ClientType) -> AbstractContextManager[Self]:
         """Yield a detached staging index; publish it on success or drop it on failure."""
         ...
 
 
-@runtime_checkable
-class AsyncReplaceableIndex[ClientType](Protocol):
+class AsyncReplaceableIndex[ClientType](ABC):
     """Asynchronous index that can overwrite its live key from a staging build."""
 
+    @abstractmethod
     def replace(self, client: ClientType) -> AbstractAsyncContextManager[Self]:
         """Yield a detached staging index; publish it on success or drop it on failure."""
         ...

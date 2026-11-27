@@ -1,11 +1,10 @@
 """Synchronous key-value storage."""
 
+from abc import ABC, abstractmethod
 from collections.abc import Hashable, Mapping, Sequence
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protocol):
+class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](ABC):
     """Synchronous key-value storage.
 
     ``client`` is the storage client for that call.
@@ -14,10 +13,12 @@ class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protocol):
     ``mset`` applies one TTL to every field.
     """
 
+    @abstractmethod
     def get(self, client: ClientType, name: str, field: FieldType) -> StorageType | None:
         """Return the stored value, or ``None`` when the field is missing."""
         ...
 
+    @abstractmethod
     def set(
         self,
         client: ClientType,
@@ -30,24 +31,29 @@ class KeyValueStorage[ClientType, FieldType: Hashable, StorageType](Protocol):
         """Store ``value`` under ``field``."""
         ...
 
+    @abstractmethod
     def delete(self, client: ClientType, name: str, field: FieldType) -> None:
         """Remove ``field``. A missing field is not an error."""
         ...
 
+    @abstractmethod
     def mdelete(self, client: ClientType, name: str, fields: Sequence[FieldType]) -> None:
         """Remove every field. Missing fields are not an error."""
         ...
 
+    @abstractmethod
     def exists(self, client: ClientType, name: str, field: FieldType) -> bool:
         """Return whether ``field`` is present."""
         ...
 
+    @abstractmethod
     def mget(
         self, client: ClientType, name: str, fields: Sequence[FieldType]
     ) -> list[StorageType | None]:
         """Return values in input order. Missing fields are ``None``."""
         ...
 
+    @abstractmethod
     def mset(
         self,
         client: ClientType,

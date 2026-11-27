@@ -2,7 +2,7 @@
 
 from cachebind.tagging.breadcrumbs.colon_breadcrumbs import ColonBreadcrumbs
 from cachebind.tagging.breadcrumbs.noop_breadcrumbs import NoopBreadcrumbs
-from cachebind.tagging.breadcrumbs.protocol import Breadcrumbs
+from cachebind.tagging.breadcrumbs.breadcrumbs import Breadcrumbs
 
 __all__ = [
     "Breadcrumbs",

@@ -1,21 +1,21 @@
 """Index eviction by tag identifier."""
 
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class EvictableIndex[ClientType](Protocol):
+from abc import ABC, abstractmethod
+class EvictableIndex[ClientType](ABC):
     """Synchronous index that removes one entry by its tag identifier."""
 
+    @abstractmethod
     def evict(self, client: ClientType, identifier: str) -> None:
         """Remove the entry for ``identifier``. A missing entry is not an error."""
         ...
 
 
-@runtime_checkable
-class AsyncEvictableIndex[ClientType](Protocol):
+class AsyncEvictableIndex[ClientType](ABC):
     """Asynchronous index that removes one entry by its tag identifier."""
 
+    @abstractmethod
     async def evict(self, client: ClientType, identifier: str) -> None:
         """Remove the entry for ``identifier``. A missing entry is not an error."""
         ...

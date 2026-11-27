@@ -1,6 +1,6 @@
 """Storage.
 
-Protocols do not require Redis. Importing a Redis storage class requires the ``redis`` extra.
+Storage interfaces do not require Redis. Importing a Redis storage class requires the ``redis`` extra.
 """
 
 import importlib

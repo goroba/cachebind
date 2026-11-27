@@ -9,7 +9,15 @@ from cachebind.indexes._merge import async_merge_context
 from cachebind.indexes._update import async_update_context
 from cachebind.indexes._replace import async_replace_context, async_snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
+from cachebind.indexes.droppable import AsyncDroppableIndex
+from cachebind.indexes.evictable import AsyncEvictableIndex
+from cachebind.indexes.iterable import AsyncIterableIndex
 from cachebind.indexes.key_value.base import KeyValueBase
+from cachebind.indexes.leaseable import AsyncLeasableKeyValueIndex
+from cachebind.indexes.mergeable import AsyncMergeableIndex
+from cachebind.indexes.replaceable import AsyncReplaceableIndex
+from cachebind.indexes.snapshotable import AsyncSnapshotableIndex
+from cachebind.indexes.updatable import AsyncUpdatableIndex
 from cachebind.serializers.serializer import Serializer
 from cachebind.storage.key_value.async_storage import AsyncKeyValueStorage
 
@@ -17,7 +25,15 @@ BATCH = 100
 
 
 class AsyncKeyValueIndex[ClientType, IdType: Hashable, ModelType, StorageType](
-    KeyValueBase[ClientType, IdType, ModelType, StorageType]
+    KeyValueBase[ClientType, IdType, ModelType, StorageType],
+    AsyncSnapshotableIndex[ClientType],
+    AsyncDroppableIndex[ClientType],
+    AsyncReplaceableIndex[ClientType],
+    AsyncMergeableIndex[ClientType],
+    AsyncUpdatableIndex[ClientType],
+    AsyncEvictableIndex[ClientType],
+    AsyncIterableIndex[ClientType, tuple[str, ModelType]],
+    AsyncLeasableKeyValueIndex[ClientType, IdType, ModelType],
 ):
     """Async key-value index: model binding, storage key, and the storage that persists it.
 

@@ -166,7 +166,16 @@ def test_duplicate_index_key() -> None:
             storage = AsyncUserStorage()
 
 
-class MemoryHash:
+class MemoryHash(
+    KeyValueStorage[object, str, str],
+    SnapshotableStorage[object],
+    ReplaceableStorage[object],
+    MergeableStorage[object],
+    CopyableStorage[object],
+    DroppableStorage[object],
+    IterableStorage[object, object],
+    LeasableKeyValueStorage[object],
+):
     def get(self, client: object, name: str, field: str) -> str | None:
         return None
 
@@ -228,7 +237,16 @@ class MemoryHash:
         del client, name, field, token
 
 
-class AsyncMemoryHash:
+class AsyncMemoryHash(
+    AsyncKeyValueStorage[object, str, str],
+    AsyncSnapshotableStorage[object],
+    AsyncReplaceableStorage[object],
+    AsyncMergeableStorage[object],
+    AsyncCopyableStorage[object],
+    AsyncDroppableStorage[object],
+    AsyncIterableStorage[object, object],
+    AsyncLeasableKeyValueStorage[object],
+):
     async def get(self, client: object, name: str, field: str) -> str | None:
         return None
 
@@ -291,7 +309,15 @@ class AsyncMemoryHash:
         del client, name, field, token
 
 
-class MemorySet:
+class MemorySet(
+    SetStorage[object, str],
+    SnapshotableStorage[object],
+    ReplaceableStorage[object],
+    MergeableStorage[object],
+    CopyableStorage[object],
+    DroppableStorage[object],
+    IterableStorage[object, object],
+):
     def add(self, client: object, name: str, member: str) -> None:
         return None
 
@@ -326,7 +352,15 @@ class MemorySet:
         return iter(())
 
 
-class AsyncMemorySet:
+class AsyncMemorySet(
+    AsyncSetStorage[object, str],
+    AsyncSnapshotableStorage[object],
+    AsyncReplaceableStorage[object],
+    AsyncMergeableStorage[object],
+    AsyncCopyableStorage[object],
+    AsyncDroppableStorage[object],
+    AsyncIterableStorage[object, object],
+):
     async def add(self, client: object, name: str, member: str) -> None:
         return None
 
@@ -362,7 +396,15 @@ class AsyncMemorySet:
             yield _item
 
 
-class MemoryOrderedSet:
+class MemoryOrderedSet(
+    OrderedSetStorage[object, str],
+    SnapshotableStorage[object],
+    ReplaceableStorage[object],
+    MergeableStorage[object],
+    CopyableStorage[object],
+    DroppableStorage[object],
+    IterableStorage[object, object],
+):
     def add(self, client: object, name: str, member: str, score: float) -> None:
         return None
 
@@ -422,7 +464,15 @@ class MemoryOrderedSet:
         return iter(())
 
 
-class AsyncMemoryOrderedSet:
+class AsyncMemoryOrderedSet(
+    AsyncOrderedSetStorage[object, str],
+    AsyncSnapshotableStorage[object],
+    AsyncReplaceableStorage[object],
+    AsyncMergeableStorage[object],
+    AsyncCopyableStorage[object],
+    AsyncDroppableStorage[object],
+    AsyncIterableStorage[object, object],
+):
     async def add(self, client: object, name: str, member: str, score: float) -> None:
         return None
 
@@ -485,7 +535,14 @@ class AsyncMemoryOrderedSet:
             yield _item
 
 
-class MemoryTrie:
+class MemoryTrie(
+    TrieStorage[object, str],
+    SnapshotableStorage[object],
+    ReplaceableStorage[object],
+    MergeableStorage[object],
+    CopyableStorage[object],
+    DroppableStorage[object],
+):
     def add(
         self,
         client: object,
@@ -544,7 +601,14 @@ class MemoryTrie:
         return None
 
 
-class AsyncMemoryTrie:
+class AsyncMemoryTrie(
+    AsyncTrieStorage[object, str],
+    AsyncSnapshotableStorage[object],
+    AsyncReplaceableStorage[object],
+    AsyncMergeableStorage[object],
+    AsyncCopyableStorage[object],
+    AsyncDroppableStorage[object],
+):
     async def add(
         self,
         client: object,
@@ -603,7 +667,7 @@ class AsyncMemoryTrie:
         return None
 
 
-class PartialKvStorage:
+class PartialKvStorage(KeyValueStorage[object, str, str]):
     def get(self, client: object, name: str, field: str) -> str | None:
         return None
 
@@ -630,7 +694,7 @@ class PartialKvStorage:
         return None
 
 
-def test_storage_protocols() -> None:
+def test_storage_interfaces() -> None:
     kv = MemoryHash()
     async_kv = AsyncMemoryHash()
     assert isinstance(kv, KeyValueStorage)

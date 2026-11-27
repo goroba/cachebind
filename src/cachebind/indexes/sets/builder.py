@@ -7,9 +7,9 @@ from cachebind.indexes._builder import (
     check_key,
     check_storage_type,
     check_value_type,
+    generic_args,
     index_class,
     instance_class,
-    protocol_args,
     serializer_class,
     serializer_types,
     storage_client_type,
@@ -49,7 +49,7 @@ def build_set_index[
             storage=storage,
             breadcrumbs=breadcrumbs,
             base=SetIndex,
-            protocol=SetStorage,
+            interface=SetStorage,
             other=AsyncSetStorage,
         ),
     )
@@ -82,7 +82,7 @@ def build_async_set_index[
             storage=storage,
             breadcrumbs=breadcrumbs,
             base=AsyncSetIndex,
-            protocol=AsyncSetStorage,
+            interface=AsyncSetStorage,
             other=SetStorage,
         ),
     )
@@ -96,7 +96,7 @@ def _build(
     storage: Any,
     breadcrumbs: Breadcrumbs | None,
     base: type[SetIndex[Any, Any, Any]] | type[AsyncSetIndex[Any, Any, Any]],
-    protocol: type[SetStorage[Any, Any]] | type[AsyncSetStorage[Any, Any]],
+    interface: type[SetStorage[Any, Any]] | type[AsyncSetStorage[Any, Any]],
     other: type[SetStorage[Any, Any]] | type[AsyncSetStorage[Any, Any]],
 ) -> Any:
     check_key(key)
@@ -104,9 +104,9 @@ def _build(
     value_type, serializer_storage = serializer_types(key, serializer_class(serializer))
     check_value_type(key, member_type, value_type, label="member type")
     storage_cls = instance_class(key, storage, label="storage")
-    storage_type = _storage_type(key, storage_cls, protocol, other)
+    storage_type = _storage_type(key, storage_cls, interface, other)
     check_storage_type(key, serializer_storage, storage_type, storage_cls)
-    client_type = storage_client_type(key, storage_cls, protocol)
+    client_type = storage_client_type(key, storage_cls, interface)
     if breadcrumbs is None:
         breadcrumbs = ColonBreadcrumbs()
     else:
@@ -124,13 +124,13 @@ def _build(
 def _storage_type(
     key: str,
     storage: type,
-    protocol: type,
+    interface: type,
     other: type,
 ) -> Any:
-    args = protocol_args(storage, protocol)
+    args = generic_args(storage, interface)
     if args is None or len(args) != 2:
-        if protocol_args(storage, other) is not None:
-            if protocol is SetStorage:
+        if generic_args(storage, other) is not None:
+            if interface is SetStorage:
                 raise TypeError(
                     f"index {key!r}: {storage.__name__} is asynchronous; "
                     "build_set_index requires SetStorage"
@@ -141,6 +141,6 @@ def _storage_type(
             )
         raise TypeError(
             f"index {key!r}: {storage.__name__} does not declare "
-            f"{protocol.__name__}[ClientType, MemberType]"
+            f"{interface.__name__}[ClientType, MemberType]"
         )
     return args[1]

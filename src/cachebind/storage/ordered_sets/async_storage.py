@@ -1,11 +1,10 @@
 """Asynchronous ordered-set storage."""
 
+from abc import ABC, abstractmethod
 from collections.abc import Hashable, Sequence
-from typing import Protocol, runtime_checkable
 
 
-@runtime_checkable
-class AsyncOrderedSetStorage[ClientType, MemberType: Hashable](Protocol):
+class AsyncOrderedSetStorage[ClientType, MemberType: Hashable](ABC):
     """Asynchronous ordered-set storage.
 
     ``client`` is the storage client for that call.
@@ -16,58 +15,70 @@ class AsyncOrderedSetStorage[ClientType, MemberType: Hashable](Protocol):
     A range includes ``start`` and ``stop``.
     """
 
+    @abstractmethod
     async def add(self, client: ClientType, name: str, member: MemberType, score: float) -> None:
         """Add ``member`` with ``score``. A member that is already present gets the new score."""
         ...
 
+    @abstractmethod
     async def madd(
         self, client: ClientType, name: str, members: Sequence[tuple[MemberType, float]]
     ) -> None:
         """Add every member with its score. A repeated member keeps the last score."""
         ...
 
+    @abstractmethod
     async def remove(self, client: ClientType, name: str, member: MemberType) -> None:
         """Remove ``member``. A missing member is not an error."""
         ...
 
+    @abstractmethod
     async def mremove(self, client: ClientType, name: str, members: Sequence[MemberType]) -> None:
         """Remove every member. Missing members are not an error."""
         ...
 
+    @abstractmethod
     async def contains(self, client: ClientType, name: str, member: MemberType) -> bool:
         """Return whether ``member`` is in the ordered set."""
         ...
 
+    @abstractmethod
     async def score(self, client: ClientType, name: str, member: MemberType) -> float | None:
         """Return the score of ``member``, or ``None`` when it is missing."""
         ...
 
+    @abstractmethod
     async def rank(self, client: ClientType, name: str, member: MemberType) -> int | None:
         """Return the 0-based ascending rank of ``member``, or ``None`` when it is missing."""
         ...
 
+    @abstractmethod
     async def range(
         self, client: ClientType, name: str, start: int, stop: int
     ) -> list[MemberType]:
         """Return members from ``start`` through ``stop``, both inclusive."""
         ...
 
+    @abstractmethod
     async def range_with_scores(
         self, client: ClientType, name: str, start: int, stop: int
     ) -> list[tuple[MemberType, float]]:
         """Return members and scores from ``start`` through ``stop``, both inclusive."""
         ...
 
+    @abstractmethod
     async def rev_rank(self, client: ClientType, name: str, member: MemberType) -> int | None:
         """Return the 0-based descending rank of ``member``, or ``None`` when it is missing."""
         ...
 
+    @abstractmethod
     async def rev_range(
         self, client: ClientType, name: str, start: int, stop: int
     ) -> list[MemberType]:
         """Return members from ``start`` through ``stop``, both inclusive, highest score first."""
         ...
 
+    @abstractmethod
     async def rev_range_with_scores(
         self, client: ClientType, name: str, start: int, stop: int
     ) -> list[tuple[MemberType, float]]:

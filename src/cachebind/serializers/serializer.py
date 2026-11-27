@@ -1,16 +1,18 @@
-"""Serializer protocol."""
+"""Serializer."""
 
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Protocol
 
 
-class Serializer[ValueType, StorageType](Protocol):
+class Serializer[ValueType, StorageType](ABC):
     """Convert a Python value to a storage value and back."""
 
+    @abstractmethod
     def serialize(self, value: ValueType) -> StorageType:
         """Convert ``value`` into its storage representation."""
         ...
 
+    @abstractmethod
     def deserialize(self, value: StorageType) -> ValueType:
         """Restore a Python value from its storage representation."""
         ...

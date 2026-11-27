@@ -7,9 +7,9 @@ from cachebind.indexes._builder import (
     check_key,
     check_storage_type,
     check_value_type,
+    generic_args,
     index_class,
     instance_class,
-    protocol_args,
     serializer_class,
     serializer_types,
     storage_client_type,
@@ -52,7 +52,7 @@ def build_key_value_index[
             storage=storage,
             breadcrumbs=breadcrumbs,
             base=KeyValueIndex,
-            protocol=KeyValueStorage,
+            interface=KeyValueStorage,
             other=AsyncKeyValueStorage,
         ),
     )
@@ -88,7 +88,7 @@ def build_async_key_value_index[
             storage=storage,
             breadcrumbs=breadcrumbs,
             base=AsyncKeyValueIndex,
-            protocol=AsyncKeyValueStorage,
+            interface=AsyncKeyValueStorage,
             other=KeyValueStorage,
         ),
     )
@@ -103,7 +103,7 @@ def _build(
     storage: Any,
     breadcrumbs: Breadcrumbs | None,
     base: type[KeyValueIndex[Any, Any, Any, Any]] | type[AsyncKeyValueIndex[Any, Any, Any, Any]],
-    protocol: type[KeyValueStorage[Any, Any, Any]] | type[AsyncKeyValueStorage[Any, Any, Any]],
+    interface: type[KeyValueStorage[Any, Any, Any]] | type[AsyncKeyValueStorage[Any, Any, Any]],
     other: type[KeyValueStorage[Any, Any, Any]] | type[AsyncKeyValueStorage[Any, Any, Any]],
 ) -> Any:
     check_key(key)
@@ -112,9 +112,9 @@ def _build(
     value_type, serializer_storage = serializer_types(key, serializer_class(serializer))
     check_value_type(key, model_type, value_type, label="model type")
     storage_cls = instance_class(key, storage, label="storage")
-    storage_type = _storage_type(key, storage_cls, protocol, other)
+    storage_type = _storage_type(key, storage_cls, interface, other)
     check_storage_type(key, serializer_storage, storage_type, storage_cls)
-    client_type = storage_client_type(key, storage_cls, protocol)
+    client_type = storage_client_type(key, storage_cls, interface)
     if breadcrumbs is None:
         breadcrumbs = ColonBreadcrumbs()
     else:
@@ -143,13 +143,13 @@ def _check_id_type(key: str, id_type: Any) -> None:
 def _storage_type(
     key: str,
     storage: type,
-    protocol: type,
+    interface: type,
     other: type,
 ) -> Any:
-    args = protocol_args(storage, protocol)
+    args = generic_args(storage, interface)
     if args is None or len(args) != 3:
-        if protocol_args(storage, other) is not None:
-            if protocol is KeyValueStorage:
+        if generic_args(storage, other) is not None:
+            if interface is KeyValueStorage:
                 raise TypeError(
                     f"index {key!r}: {storage.__name__} is asynchronous; "
                     "build_key_value_index requires KeyValueStorage"
@@ -160,7 +160,7 @@ def _storage_type(
             )
         raise TypeError(
             f"index {key!r}: {storage.__name__} does not declare "
-            f"{protocol.__name__}[ClientType, FieldType, StorageType]"
+            f"{interface.__name__}[ClientType, FieldType, StorageType]"
         )
     field_type, storage_type = args[1:]
     if field_type is not str:

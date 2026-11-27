@@ -12,10 +12,22 @@ from cachebind.backends.redis import (
     sugadd_command,
     sugget_command,
 )
+from cachebind.storage.copyable import AsyncCopyableStorage
+from cachebind.storage.droppable import AsyncDroppableStorage
+from cachebind.storage.mergeable import AsyncMergeableStorage
+from cachebind.storage.replaceable import AsyncReplaceableStorage
+from cachebind.storage.snapshotable import AsyncSnapshotableStorage
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
 
 
-class AsyncRedisTrieStorage(AsyncTrieStorage[AsyncRedis, str]):
+class AsyncRedisTrieStorage(
+    AsyncTrieStorage[AsyncRedis, str],
+    AsyncSnapshotableStorage[AsyncRedis],
+    AsyncReplaceableStorage[AsyncRedis],
+    AsyncMergeableStorage[AsyncRedis],
+    AsyncCopyableStorage[AsyncRedis],
+    AsyncDroppableStorage[AsyncRedis],
+):
     """Asynchronous Redis Search trie. ``name`` is the suggestion-dictionary key.
 
     Rank uses the stored score. A shorter remainder after the prefix ranks higher

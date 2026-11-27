@@ -8,13 +8,25 @@ from cachebind.indexes._merge import async_merge_context
 from cachebind.indexes._update import async_update_context
 from cachebind.indexes._replace import async_replace_context, async_snapshot_context
 from cachebind.indexes._serializer import resolve_serializer
+from cachebind.indexes.droppable import AsyncDroppableIndex
+from cachebind.indexes.evictable import AsyncEvictableIndex
+from cachebind.indexes.mergeable import AsyncMergeableIndex
+from cachebind.indexes.replaceable import AsyncReplaceableIndex
+from cachebind.indexes.snapshotable import AsyncSnapshotableIndex
 from cachebind.indexes.tries.base import TrieBase
+from cachebind.indexes.updatable import AsyncUpdatableIndex
 from cachebind.backends.redis import check_limit
 from cachebind.storage.tries.async_storage import AsyncTrieStorage
 
 
 class AsyncTrieIndex[ClientType, MemberType, StorageType: Hashable](
-    TrieBase[ClientType, MemberType, StorageType]
+    TrieBase[ClientType, MemberType, StorageType],
+    AsyncSnapshotableIndex[ClientType],
+    AsyncDroppableIndex[ClientType],
+    AsyncReplaceableIndex[ClientType],
+    AsyncMergeableIndex[ClientType],
+    AsyncUpdatableIndex[ClientType],
+    AsyncEvictableIndex[ClientType],
 ):
     """Async trie index: member binding, storage key, and the storage that persists it.
 

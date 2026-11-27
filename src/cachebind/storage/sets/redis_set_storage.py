@@ -12,10 +12,24 @@ from cachebind.backends.redis import (
     scan_done,
     swap_key,
 )
+from cachebind.storage.copyable import CopyableStorage
+from cachebind.storage.droppable import DroppableStorage
+from cachebind.storage.iterable import IterableStorage
+from cachebind.storage.mergeable import MergeableStorage
+from cachebind.storage.replaceable import ReplaceableStorage
 from cachebind.storage.sets.storage import SetStorage
+from cachebind.storage.snapshotable import SnapshotableStorage
 
 
-class RedisSetStorage(SetStorage[Redis, str]):
+class RedisSetStorage(
+    SetStorage[Redis, str],
+    SnapshotableStorage[Redis],
+    ReplaceableStorage[Redis],
+    MergeableStorage[Redis],
+    CopyableStorage[Redis],
+    DroppableStorage[Redis],
+    IterableStorage[Redis, str],
+):
     """Synchronous Redis sets. ``name`` is the Redis key."""
 
     def add(self, client: Redis, name: str, member: str) -> None:

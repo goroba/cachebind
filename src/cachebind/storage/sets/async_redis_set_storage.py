@@ -12,10 +12,24 @@ from cachebind.backends.redis import (
     required_text,
     scan_done,
 )
+from cachebind.storage.copyable import AsyncCopyableStorage
+from cachebind.storage.droppable import AsyncDroppableStorage
+from cachebind.storage.iterable import AsyncIterableStorage
+from cachebind.storage.mergeable import AsyncMergeableStorage
+from cachebind.storage.replaceable import AsyncReplaceableStorage
 from cachebind.storage.sets.async_storage import AsyncSetStorage
+from cachebind.storage.snapshotable import AsyncSnapshotableStorage
 
 
-class AsyncRedisSetStorage(AsyncSetStorage[AsyncRedis, str]):
+class AsyncRedisSetStorage(
+    AsyncSetStorage[AsyncRedis, str],
+    AsyncSnapshotableStorage[AsyncRedis],
+    AsyncReplaceableStorage[AsyncRedis],
+    AsyncMergeableStorage[AsyncRedis],
+    AsyncCopyableStorage[AsyncRedis],
+    AsyncDroppableStorage[AsyncRedis],
+    AsyncIterableStorage[AsyncRedis, str],
+):
     """Asynchronous Redis sets. ``name`` is the Redis key."""
 
     async def add(self, client: AsyncRedis, name: str, member: str) -> None:
