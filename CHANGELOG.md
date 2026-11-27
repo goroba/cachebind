@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-27
+
+### Changed
+
+- Index, storage, serializer, and tagging contracts are ABCs with `@abstractmethod` instead of `Protocol` / `@runtime_checkable`.
+- Index and Redis storage classes declare explicit capability inheritance.
+- Index builders resolve storage types via `generic_args` (formerly `protocol_args`).
+- `Breadcrumbs` and `TagKeeper` ABCs replace the old `protocol.py` modules under tagging.
+- `README.md` and `docs/architecture.md` refer to storage interfaces rather than protocols.
+
 ## [1.3.0] - 2026-11-27
 
 ### Added
@@ -100,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional serializers on index actions; `NoopSerializer`.
 - Write-back caching documentation example.
 
+[1.4.0]: https://github.com/goroba/cachebind/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/goroba/cachebind/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/goroba/cachebind/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/goroba/cachebind/compare/v1.1.2...v1.2.0
